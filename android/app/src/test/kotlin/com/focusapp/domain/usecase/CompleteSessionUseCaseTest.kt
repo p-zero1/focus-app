@@ -136,7 +136,7 @@ private class FakeSessionRepository : SessionRepository {
     override suspend fun updateSession(session: FocusSession) { updatedSessions.add(session) }
     override suspend fun getSessionById(id: Long): FocusSession? = sessions[id]
     override fun getAllSessions(): Flow<List<FocusSession>> = flowOf(emptyList())
-    override fun getSessionsByDateRange(startMs: Long, endMs: Long): Flow<List<FocusSession>> = flowOf(emptyList())
+    override fun getSessionsByDateRange(startMs: Long, endMs: Long, isPremium: Boolean): Flow<List<FocusSession>> = flowOf(emptyList())
     override fun getSessionsByTag(tag: String): Flow<List<FocusSession>> = flowOf(emptyList())
     override suspend fun getCompletedCountSince(sinceMs: Long): Int = 0
     override suspend fun getTotalCompletedCount(): Int = 0

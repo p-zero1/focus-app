@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
+    onNavigateToTimer: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
@@ -84,7 +86,7 @@ fun AnalyticsScreen(
 
             // ---- Bar chart or empty state ----
             if (activeData.isEmpty()) {
-                EmptyAnalyticsState()
+                EmptyAnalyticsState(onNavigateToTimer = onNavigateToTimer)
             } else {
                 FocusBarChart(
                     summaries = activeData,
@@ -105,7 +107,7 @@ fun AnalyticsScreen(
 }
 
 @Composable
-private fun EmptyAnalyticsState() {
+private fun EmptyAnalyticsState(onNavigateToTimer: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -124,5 +126,9 @@ private fun EmptyAnalyticsState() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onNavigateToTimer) {
+            Text("Start a session")
+        }
     }
 }

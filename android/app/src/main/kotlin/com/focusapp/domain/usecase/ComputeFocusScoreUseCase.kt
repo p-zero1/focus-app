@@ -32,7 +32,29 @@ class ComputeFocusScoreUseCase @Inject constructor() {
                                    else (1.0 - totalDistractionMinutes.toDouble() / totalMinutes)
                                        .coerceIn(0.0, 1.0)
 
-        val raw = completionRatio * 70.0 + distractionFreeRatio * 30.0
-        return raw.toInt().coerceIn(0, 100)
+        return score(completionRatio, distractionFreeRatio)
     }
+
+    /**
+     * Per-session variant: takes raw session values instead of aggregated daily summaries.
+     * Used by [CompleteSessionUseCase] to persist a focus score alongside the session row.
+     *
+     * Formula mirrors the aggregate variant:
+     *   completedRatio = 1.0 if completed, else 0.0
+     *   distractionFreeRatio = 1 − (distractionTotalSeconds / actualDurationSeconds)
+     */
+    operator fun invoke(
+        completed: Boolean,
+        distractionTotalSeconds: Int,
+        actualDurationSeconds: Int,
+    ): Int {
+        if (actualDurationSeconds == 0) return 100
+        val completedRatio = if (completed) 1.0 else 0.0
+        val distractionFreeRatio =
+            (1.0 - distractionTotalSeconds.toDouble() / actualDurationSeconds).coerceIn(0.0, 1.0)
+        return score(completedRatio, distractionFreeRatio)
+    }
+
+    private fun score(completedRatio: Double, distractionFreeRatio: Double): Int =
+        (completedRatio * 70.0 + distractionFreeRatio * 30.0).toInt().coerceIn(0, 100)
 }

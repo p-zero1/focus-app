@@ -154,21 +154,21 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 
 **Study/Coding Mode**
 
-- **FR-020**: System MUST provide a Study Mode with an optional countdown target and mandatory session tagging.
+- **FR-020**: System MUST provide a Study Mode with an optional countdown target and optional session tagging (tag field shown; not required to start).
 - **FR-021**: System MUST allow users to filter session history by tag and view aggregated time per tag.
 - **FR-022**: System MUST fire an alarm-style notification when a Study Mode countdown reaches zero, even when the app is backgrounded.
 
 **Reminders**
 
-- **FR-023**: System MUST detect consistent session-start time patterns (3+ sessions at similar times) and offer to schedule a recurring reminder.
-- **FR-024**: System MUST send a break nudge if an active session exceeds the configured max session length.
-- **FR-025**: System MUST send a daily goal reminder if the user has not met their daily focus target by a user-configurable evening time (default: 8 PM).
+- **FR-023** *(V2)*: System MUST detect consistent session-start time patterns (3+ sessions at similar times) and offer to schedule a recurring reminder.
+- **FR-024** *(V2)*: System MUST send a break nudge if an active session exceeds the configured max session length.
+- **FR-025** *(V2)*: System MUST send a daily goal reminder if the user has not met their daily focus target by a user-configurable evening time (default: 8 PM).
 
 **Monetization**
 
 - **FR-026**: Free users MUST have access to the basic timer (all modes), session history (last 30 days), and 7-day analytics.
-- **FR-027**: Premium users MUST have access to full analytics history, app blocking, advanced reports, and theme customization.
-- **FR-028**: System MUST support rewarded ads as a free-tier monetization mechanism.
+- **FR-027** *(V2)*: Premium users MUST have access to full analytics history, app blocking, advanced reports, and theme customization.
+- **FR-028** *(V2)*: System MUST support rewarded ads as a free-tier monetization mechanism.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -204,4 +204,4 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 - **Focus Score formula**: `clamp(completedRatio × 70 + distractionFreeRatio × 30, 0, 100)` where `completedRatio = actualDuration / plannedDuration` and `distractionFreeRatio = 1 − (distractionTotalSeconds / actualDuration)`. Both ratios are clamped to [0, 1] before application.
 - **Leaderboard**: Initially shows a global leaderboard of weekly focus hours. Friend-based leaderboard requires a social graph (deferred to V2).
 - **Ads**: Rewarded ads are shown to free users at natural break points (e.g., after a session ends). Interstitial or banner ads are not used to avoid disrupting focus.
-- **V1 scope**: Timer (all modes), session tracking, basic distraction detection (app-switch + screen unlock), basic analytics (7-day), streaks, and XP. Badges, leaderboard, app blocking, and smart reminders are V2.
+- **V1 scope**: Timer (all modes), session tracking, basic distraction detection (app-switch + screen unlock), basic analytics (7-day), streaks, XP, and badges. Leaderboard, app blocking, smart reminders, rewarded ads, and premium features are V2.

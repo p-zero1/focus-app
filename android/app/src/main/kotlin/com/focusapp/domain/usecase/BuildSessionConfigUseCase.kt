@@ -13,9 +13,11 @@ import javax.inject.Inject
  * satisfying Constitution Principle II (business logic belongs in use cases).
  *
  * Duration rules:
- * - POMODORO    → pomodoroFocusMinutes from preferences
+ * - POMODORO    → pomodoroFocusMinutes from preferences (clamped to [MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES])
  * - DEEP_WORK   → 2 × pomodoroFocusMinutes
- * - CUSTOM/STUDY → caller-supplied [customDurationMinutes]
+ * - CUSTOM/STUDY → caller-supplied [customDurationMinutes], clamped to [MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES]
+ *
+ * FR-002: custom session durations are accepted from 5 to 180 minutes inclusive.
  */
 class BuildSessionConfigUseCase @Inject constructor(
     private val prefs: FocusPreferences,
@@ -28,8 +30,14 @@ class BuildSessionConfigUseCase @Inject constructor(
         val durationSeconds = when (mode) {
             SessionMode.POMODORO -> prefs.pomodoroFocusMinutes.first() * 60
             SessionMode.DEEP_WORK -> prefs.pomodoroFocusMinutes.first() * 60 * 2
-            SessionMode.CUSTOM, SessionMode.STUDY -> customDurationMinutes * 60
+            SessionMode.CUSTOM, SessionMode.STUDY ->
+                customDurationMinutes.coerceIn(MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES) * 60
         }
         return SessionConfig(mode = mode, durationSeconds = durationSeconds, tag = tag)
+    }
+
+    companion object {
+        const val MIN_CUSTOM_MINUTES = 5
+        const val MAX_CUSTOM_MINUTES = 180
     }
 }

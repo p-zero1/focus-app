@@ -23,17 +23,18 @@ An Android-first Focus Timer application combining a foreground-service countdow
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Status**: Constitution template not yet customized for this project. No project-level gates established. Proceeding under default engineering principles:
+**Status**: Constitution v1.0.0 ratified 2026-04-25. All gates pass.
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| No unnecessary abstractions | ✅ PASS | Repository interfaces defined once; no layer duplication |
-| Permissions degraded gracefully | ✅ PASS | All 3 permissions have explicit fallback behavior (research.md §9) |
-| App blocking out of scope V1/V2 | ✅ PASS | FR-010 explicitly deferred to V3 |
-| Offline-first (V1) | ✅ PASS | Room local DB; no cloud dependency in V1 |
-| Single module | ✅ PASS | `android/app` is a single-module project |
-
-No violations to justify.
+| No unnecessary abstractions (§VI) | ✅ PASS | Repository interfaces defined once; no layer duplication |
+| Permissions degraded gracefully (§IV) | ✅ PASS | All 4 permissions have explicit fallback behavior (research.md §9) |
+| App blocking out of scope V1/V2 (§VII) | ✅ PASS | FR-010 explicitly deferred to V3 |
+| Offline-first (§III) | ✅ PASS | Room local DB; no cloud dependency in V1 |
+| Single module (§I) | ✅ PASS | `android/app` is a single-module project |
+| Domain-first / no cross-layer imports (§II) | ✅ PASS | TimerService uses FocusPreferences interface (C7 fix); domain has zero Android imports |
+| V1 scope gate (§VII) | ✅ PASS | Phase 8 (US6) correctly marked V2; all V2/V3 items blocked |
+| Free-tier enforcement at DAO layer | ✅ PASS | `clampStartForTier()` implemented in `SessionRepositoryImpl` (Fix Pass 4 — C2) |
 
 ## Project Structure
 
@@ -149,7 +150,7 @@ All tasks defined in `tasks.md`. Implementation phases:
 | Phase 6 (tasks.md) | US4 Gamification — XP, streaks, badges, ProfileScreen (T056–T064) | ✅ DONE |
 | Phase 7 (tasks.md) | US5 Study Mode + Tagging — tag input, history filter (T065–T072) | ✅ DONE |
 | Phase 8 (tasks.md) | US6 Smart Reminders — WorkManager, AlarmManager, SettingsScreen (T073–T080) | ⬜ V2 |
-| Phase N (tasks.md) | Polish — onboarding, empty states, accessibility, boot receiver (T081–T089) | ⬜ PENDING |
+| Phase N (tasks.md) | Polish — onboarding, empty states, accessibility, boot receiver (T081–T089) | ✅ DONE |
 
 #### Phase 4 Detail: US2 Distraction Detection (T037–T046)
 

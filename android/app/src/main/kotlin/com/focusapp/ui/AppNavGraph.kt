@@ -1,19 +1,25 @@
 package com.focusapp.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -23,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.focusapp.ui.analytics.AnalyticsScreen
 import com.focusapp.ui.history.HistoryScreen
 import com.focusapp.ui.history.SessionDetailScreen
+import com.focusapp.ui.onboarding.OnboardingScreen
 import com.focusapp.ui.profile.ProfileScreen
 import com.focusapp.ui.timer.TimerScreen
 
@@ -55,7 +62,17 @@ private val bottomNavItems = listOf(
 private val noBottomBarRoutes = setOf(Routes.ONBOARDING, Routes.SESSION_DETAIL, Routes.SETTINGS)
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(startupViewModel: StartupViewModel = hiltViewModel()) {
+    val startDestination by startupViewModel.startDestination.collectAsState()
+
+    // Wait for DataStore to resolve the initial destination before rendering NavHost
+    if (startDestination == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -90,12 +107,17 @@ fun AppNavGraph() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.TIMER,
+            startDestination = startDestination!!,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Routes.ONBOARDING) {
-                // Placeholder — implemented in Phase N (T081)
-                Text("Onboarding")
+                OnboardingScreen(
+                    onFinished = {
+                        navController.navigate(Routes.TIMER) {
+                            popUpTo(Routes.ONBOARDING) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable(Routes.TIMER) {
                 TimerScreen(
@@ -105,12 +127,31 @@ fun AppNavGraph() {
                 )
             }
             composable(Routes.ANALYTICS) {
-                AnalyticsScreen()
+                AnalyticsScreen(
+                    onNavigateToTimer = {
+                        navController.navigate(Routes.TIMER) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                )
             }
             composable(Routes.HISTORY) {
                 HistoryScreen(
                     onSessionClick = { sessionId ->
                         navController.navigate(Routes.sessionDetail(sessionId))
+                    },
+                    onNavigateToTimer = {
+                        navController.navigate(Routes.TIMER) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }

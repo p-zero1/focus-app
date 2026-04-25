@@ -43,8 +43,8 @@ class SessionRepositoryImpl @Inject constructor(
     override fun getAllSessions(): Flow<List<FocusSession>> =
         sessionDao.getAll().map { list -> list.map { it.toDomain() } }
 
-    override fun getSessionsByDateRange(startMs: Long, endMs: Long): Flow<List<FocusSession>> =
-        sessionDao.getByDateRange(clampStartForTier(startMs = startMs), endMs)
+    override fun getSessionsByDateRange(startMs: Long, endMs: Long, isPremium: Boolean): Flow<List<FocusSession>> =
+        sessionDao.getByDateRange(clampStartForTier(isPremium = isPremium, startMs = startMs), endMs)
             .map { list -> list.map { it.toDomain() } }
 
     override fun getSessionsByTag(tag: String): Flow<List<FocusSession>> =
@@ -76,11 +76,28 @@ class SessionRepositoryImpl @Inject constructor(
     override suspend fun getSessionCountSince(sinceMs: Long): Int =
         sessionDao.getSessionCountSince(sinceMs)
 
-    // ---- Tier gating (dormant — H4) ----
+    // ---- Tier gating (FR-015 / FR-026 — Constitution Monetisation Boundary) ----
 
-    /** Identity function today (isPremium hardcoded true). Wired in as the hook point for
-     *  future free-tier date clamping without changing callers. */
-    private fun clampStartForTier(isPremium: Boolean = true, startMs: Long): Long = startMs
+    /**
+     * Clamps [startMs] to the free-tier analytics window when [isPremium] is false.
+     *
+     * Free users are limited to the last [FREE_TIER_ANALYTICS_DAYS] days (FR-015).
+     * Premium users receive the unmodified [startMs].
+     *
+     * Enforcement is at the repository query level per the constitution:
+     * "Free-tier access limits MUST be enforced at the repository query level — not
+     *  in the ViewModel or UI layer."
+     */
+    private fun clampStartForTier(isPremium: Boolean, startMs: Long): Long {
+        if (isPremium) return startMs
+        val freeWindowStartMs = System.currentTimeMillis() - FREE_TIER_ANALYTICS_DAYS * 24 * 60 * 60 * 1000L
+        return maxOf(startMs, freeWindowStartMs)
+    }
+
+    companion object {
+        /** Free-tier analytics window in days (FR-015). */
+        private const val FREE_TIER_ANALYTICS_DAYS = 7L
+    }
 
     // ---- Mappers ----
 

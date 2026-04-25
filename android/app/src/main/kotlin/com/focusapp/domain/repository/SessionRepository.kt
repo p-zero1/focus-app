@@ -18,7 +18,14 @@ interface SessionRepository {
 
     fun getAllSessions(): Flow<List<FocusSession>>
 
-    fun getSessionsByDateRange(startMs: Long, endMs: Long): Flow<List<FocusSession>>
+    /**
+     * Returns sessions whose [FocusSession.startTime] is in [[startMs], [endMs]).
+     *
+     * When [isPremium] is `false` the repository clamps [startMs] to the free-tier
+     * analytics window (last 7 days), enforcing FR-015 at the data layer as required
+     * by the constitution Monetisation Boundary principle.
+     */
+    fun getSessionsByDateRange(startMs: Long, endMs: Long, isPremium: Boolean = true): Flow<List<FocusSession>>
 
     fun getSessionsByTag(tag: String): Flow<List<FocusSession>>
 

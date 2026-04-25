@@ -22,6 +22,7 @@ class CompleteSessionUseCase @Inject constructor(
     private val awardXp: AwardXpUseCase,
     private val updateStreak: UpdateStreakUseCase,
     private val evaluateBadges: EvaluateBadgesUseCase,
+    private val computeFocusScore: ComputeFocusScoreUseCase,
 ) {
     suspend operator fun invoke(
         sessionId: Long,
@@ -43,8 +44,8 @@ class CompleteSessionUseCase @Inject constructor(
         val focusScore = computeFocusScore(
             completed = status == SessionStatus.COMPLETED,
             distractionTotalSeconds = session.distractionTotalSeconds,
-            actualDuration = actualDuration,
-        )
+            actualDurationSeconds = actualDuration,
+        )  // delegates to ComputeFocusScoreUseCase — single source of truth for the formula
 
         val updatedSession = session.copy(
             status = status,
@@ -63,19 +64,4 @@ class CompleteSessionUseCase @Inject constructor(
         return newBadges
     }
 
-    /**
-     * Focus Score = clamp(completedRatio×70 + distractionFreeRatio×30, 0, 100)
-     */
-    private fun computeFocusScore(
-        completed: Boolean,
-        distractionTotalSeconds: Int,
-        actualDuration: Int,
-    ): Int {
-        if (actualDuration == 0) return 100
-        val completedRatio = if (completed) 1.0 else 0.0
-        val distractionRatio = (distractionTotalSeconds.toDouble() / actualDuration).coerceIn(0.0, 1.0)
-        val distractionFreeRatio = 1.0 - distractionRatio
-        val raw = completedRatio * 70 + distractionFreeRatio * 30
-        return raw.toInt().coerceIn(0, 100)
-    }
 }

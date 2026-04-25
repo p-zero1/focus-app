@@ -11,12 +11,12 @@ import android.os.Binder
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import com.focusapp.data.prefs.AppPreferences
 import com.focusapp.domain.model.DistractionType
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.TimerState
 import com.focusapp.domain.model.TimerStatus
+import com.focusapp.domain.preferences.FocusPreferences
 import com.focusapp.domain.usecase.CompleteSessionUseCase
 import com.focusapp.domain.usecase.LogDistractionUseCase
 import com.focusapp.domain.usecase.StartSessionUseCase
@@ -43,7 +43,7 @@ class TimerService : Service() {
     @Inject lateinit var completeSessionUseCase: CompleteSessionUseCase
     @Inject lateinit var logDistractionUseCase: LogDistractionUseCase
     @Inject lateinit var distractionMonitor: DistractionMonitor
-    @Inject lateinit var appPreferences: AppPreferences
+    @Inject lateinit var focusPreferences: FocusPreferences
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -238,11 +238,11 @@ class TimerService : Service() {
 
         if (currentMode == SessionMode.POMODORO) {
             pomodoroIntervalsDone++
-            val intervalsBeforeLong = appPreferences.pomodoroIntervalsBeforeLong.first()
+            val intervalsBeforeLong = focusPreferences.pomodoroIntervalsBeforeLong.first()
             val breakMinutes = if (pomodoroIntervalsDone % intervalsBeforeLong == 0) {
-                appPreferences.pomodoroLongBreakMinutes.first()
+                focusPreferences.pomodoroLongBreakMinutes.first()
             } else {
-                appPreferences.pomodoroShortBreakMinutes.first()
+                focusPreferences.pomodoroShortBreakMinutes.first()
             }
             _timerState.value = state.copy(
                 status = TimerStatus.BREAK,
@@ -254,6 +254,8 @@ class TimerService : Service() {
             updateNotification("Break time! ${breakMinutes}m")
             runBreakCountdown(breakMinutes * 60)
         } else {
+            // FR-022: Study Mode fires an alarm-style notification (high-priority + vibration)
+            if (currentMode == SessionMode.STUDY) fireStudyAlarm()
             _timerState.value = state.copy(
                 status = TimerStatus.FINISHED,
                 remainingSeconds = 0,
@@ -346,15 +348,30 @@ class TimerService : Service() {
     // ---- Notification ----
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Silent ongoing channel — used during active countdown
+        val timerChannel = NotificationChannel(
             CHANNEL_ID,
             "Focus Timer",
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = "Shows live countdown while a focus session is active"
         }
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
+
+        // High-priority alarm channel — used when Study Mode session finishes (FR-022)
+        val alarmChannel = NotificationChannel(
+            ALARM_CHANNEL_ID,
+            "Session Complete Alert",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Alarm-style alert fired when a Study Mode session countdown reaches zero"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0L, 400L, 200L, 400L)
+        }
+
+        nm.createNotificationChannel(timerChannel)
+        nm.createNotificationChannel(alarmChannel)
     }
 
     private fun buildNotification(contentText: String) =
@@ -373,6 +390,32 @@ class TimerService : Service() {
             )
             .build()
 
+    /**
+     * Fires a one-shot alarm-style notification for Study Mode session completion (FR-022).
+     * Uses [ALARM_CHANNEL_ID] (IMPORTANCE_HIGH + vibration) so it breaks through DND
+     * and is audible even when the app is backgrounded.
+     */
+    private fun fireStudyAlarm() {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = NotificationCompat.Builder(this, ALARM_CHANNEL_ID)
+            .setContentTitle("Study session complete!")
+            .setContentText("Great work — your countdown has finished.")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setVibrate(longArrayOf(0L, 400L, 200L, 400L))
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this, 1,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE,
+                )
+            )
+            .build()
+        nm.notify(ALARM_NOTIFICATION_ID, notification)
+        Timber.d("Study alarm fired")
+    }
+
     private fun updateNotification(text: String) {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NOTIFICATION_ID, buildNotification(text))
@@ -386,6 +429,8 @@ class TimerService : Service() {
 
     companion object {
         const val CHANNEL_ID = "focus_timer_channel"
+        const val ALARM_CHANNEL_ID = "focus_alarm_channel"
         const val NOTIFICATION_ID = 1001
+        const val ALARM_NOTIFICATION_ID = 1002
     }
 }

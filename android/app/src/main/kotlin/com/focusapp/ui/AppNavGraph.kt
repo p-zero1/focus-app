@@ -20,7 +20,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.focusapp.ui.analytics.AnalyticsScreen
+import com.focusapp.ui.history.HistoryScreen
 import com.focusapp.ui.history.SessionDetailScreen
+import com.focusapp.ui.profile.ProfileScreen
 import com.focusapp.ui.timer.TimerScreen
 
 // Route constants — single source of truth for navigation
@@ -102,16 +105,17 @@ fun AppNavGraph() {
                 )
             }
             composable(Routes.ANALYTICS) {
-                // Placeholder — implemented in Phase 5 (T052)
-                Text("Analytics")
+                AnalyticsScreen()
             }
             composable(Routes.HISTORY) {
-                // Placeholder — implemented in Phase 7 (T070)
-                Text("History")
+                HistoryScreen(
+                    onSessionClick = { sessionId ->
+                        navController.navigate(Routes.sessionDetail(sessionId))
+                    }
+                )
             }
             composable(Routes.PROFILE) {
-                // Placeholder — implemented in Phase 6 (T061)
-                Text("Profile")
+                ProfileScreen()
             }
             composable(Routes.SETTINGS) {
                 // Placeholder — implemented in Phase 8 (T078)

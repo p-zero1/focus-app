@@ -106,6 +106,10 @@ class TimerService : Service() {
                         )
                     }
                     is DistractionMonitor.Event.UserReturned -> {
+                        val awaySeconds = (event.awayDurationMs / 1000).toInt().coerceAtLeast(1)
+                        _timerState.value = _timerState.value.copy(
+                            lastDistractionAwaySeconds = awaySeconds,
+                        )
                         val type = if (event.packageName != null) DistractionType.APP_SWITCH
                                    else DistractionType.SCREEN_UNLOCK
                         serviceScope.launch {
@@ -133,6 +137,7 @@ class TimerService : Service() {
         acquireWakeLock()
         registerScreenReceiver()
         distractionMonitor.startMonitoring(serviceScope)
+        if (config.mode == SessionMode.DEEP_WORK) enableDnd()
 
         serviceScope.launch {
             val sessionId = startSessionUseCase(config, sessionStartTimeMs)
@@ -153,6 +158,7 @@ class TimerService : Service() {
         if (state.status != TimerStatus.ACTIVE) return
         countdownJob?.cancel()
         _timerState.value = state.copy(status = TimerStatus.PAUSED)
+        disableDnd()
         updateNotification("Paused — ${formatSeconds(state.remainingSeconds)}")
         Timber.d("Session paused at ${state.elapsedSeconds}s elapsed")
     }
@@ -161,6 +167,7 @@ class TimerService : Service() {
         val state = _timerState.value
         if (state.status != TimerStatus.PAUSED) return
         _timerState.value = state.copy(status = TimerStatus.ACTIVE)
+        if (currentMode == SessionMode.DEEP_WORK) enableDnd()
         runCountdown(state.remainingSeconds, state.currentSessionId ?: return)
     }
 
@@ -170,15 +177,20 @@ class TimerService : Service() {
         val sessionId = state.currentSessionId ?: return
 
         serviceScope.launch {
-            completeSessionUseCase(
+            val newBadges = completeSessionUseCase(
                 sessionId = sessionId,
                 actualDuration = state.elapsedSeconds,
                 endTime = System.currentTimeMillis(),
             )
+            if (newBadges.isNotEmpty()) {
+                _timerState.value = TimerState.IDLE.copy(newlyAwardedBadges = newBadges)
+            } else {
+                _timerState.value = TimerState.IDLE
+            }
+            updateNotification("Ready")
         }
+        disableDnd()
         stopSessionMonitoring()
-        _timerState.value = TimerState.IDLE
-        updateNotification("Ready")
         Timber.d("Session ended manually after ${state.elapsedSeconds}s")
     }
 
@@ -213,15 +225,16 @@ class TimerService : Service() {
 
     private suspend fun onFocusTimerFinished(sessionId: Long) {
         val state = _timerState.value
+        disableDnd()
         // Stop distraction monitoring — user is between intervals, not in focus
         stopSessionMonitoring()
 
-        completeSessionUseCase(
+        val newBadges = completeSessionUseCase(
             sessionId = sessionId,
             actualDuration = state.elapsedSeconds,
             endTime = System.currentTimeMillis(),
         )
-        Timber.d("Focus session $sessionId finished")
+        Timber.d("Focus session $sessionId finished — badges: ${newBadges.map { it.id }}")
 
         if (currentMode == SessionMode.POMODORO) {
             pomodoroIntervalsDone++
@@ -236,11 +249,16 @@ class TimerService : Service() {
                 remainingSeconds = breakMinutes * 60,
                 elapsedSeconds = 0,
                 pomodoroIntervalsDone = pomodoroIntervalsDone,
+                newlyAwardedBadges = newBadges,
             )
             updateNotification("Break time! ${breakMinutes}m")
             runBreakCountdown(breakMinutes * 60)
         } else {
-            _timerState.value = state.copy(status = TimerStatus.FINISHED, remainingSeconds = 0)
+            _timerState.value = state.copy(
+                status = TimerStatus.FINISHED,
+                remainingSeconds = 0,
+                newlyAwardedBadges = newBadges,
+            )
             updateNotification("Session complete!")
         }
     }
@@ -271,6 +289,25 @@ class TimerService : Service() {
         distractionMonitor.stopMonitoring()
         unregisterScreenReceiver()
         releaseWakeLock()
+    }
+
+    // ---- DND (Deep Work only — C4) ----
+
+    private fun enableDnd() {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (!nm.isNotificationPolicyAccessGranted) {
+            Timber.w("DND: ACCESS_NOTIFICATION_POLICY not granted — skipping")
+            return
+        }
+        nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+        Timber.d("DND enabled for Deep Work session")
+    }
+
+    private fun disableDnd() {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (!nm.isNotificationPolicyAccessGranted) return
+        nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        Timber.d("DND disabled")
     }
 
     // ---- Wake lock (U2) ----

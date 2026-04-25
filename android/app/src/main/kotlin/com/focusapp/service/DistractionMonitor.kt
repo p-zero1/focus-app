@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,6 +46,9 @@ class DistractionMonitor @Inject constructor(
     val events: SharedFlow<Event> = _events.asSharedFlow()
 
     private var pollingJob: Job? = null
+    private var timeoutJob: Job? = null
+    private var monitoringScope: CoroutineScope? = null
+
     private var isDistracted = false
     private var distractionStartMs = 0L
     private var distractionPackage: String? = null
@@ -53,6 +57,7 @@ class DistractionMonitor @Inject constructor(
 
     /** Start polling for distraction events. Call on session start. */
     fun startMonitoring(scope: CoroutineScope) {
+        monitoringScope = scope
         isDistracted = false
         pollingJob = scope.launch(Dispatchers.Default) {
             while (isActive) {
@@ -66,7 +71,10 @@ class DistractionMonitor @Inject constructor(
     /** Stop polling. Call on session end or pause. */
     fun stopMonitoring() {
         pollingJob?.cancel()
+        timeoutJob?.cancel()
         pollingJob = null
+        timeoutJob = null
+        monitoringScope = null
         isDistracted = false
         Timber.d("DistractionMonitor: stopped")
     }
@@ -82,8 +90,28 @@ class DistractionMonitor @Inject constructor(
             isDistracted = true
             distractionStartMs = now
             distractionPackage = null
+            startDistractionTimeout()
         }
         Timber.d("DistractionMonitor: screen unlock")
+    }
+
+    /**
+     * Starts a 30-second safety timeout per spec US2 AC3:
+     * "If the user unlocks and doesn't return within 30 seconds, the distraction is recorded."
+     * Applied to all distraction types for consistency.
+     */
+    private fun startDistractionTimeout() {
+        timeoutJob?.cancel()
+        timeoutJob = monitoringScope?.launch {
+            delay(30_000L)
+            if (isDistracted) {
+                val now = System.currentTimeMillis()
+                val awayMs = now - distractionStartMs
+                _events.tryEmit(Event.UserReturned(distractionPackage, now, awayMs))
+                isDistracted = false
+                Timber.d("DistractionMonitor: timeout — distraction recorded after 30s")
+            }
+        }
     }
 
     private suspend fun pollForegroundApp() {
@@ -107,10 +135,13 @@ class DistractionMonitor @Inject constructor(
                 distractionStartMs = now
                 distractionPackage = latestForeground
                 _events.tryEmit(Event.AppSwitch(latestForeground, now))
+                startDistractionTimeout()
                 Timber.d("DistractionMonitor: distraction — $latestForeground")
             }
         } else if (isDistracted) {
             val awayMs = now - distractionStartMs
+            timeoutJob?.cancel()
+            timeoutJob = null
             _events.tryEmit(Event.UserReturned(distractionPackage, now, awayMs))
             Timber.d("DistractionMonitor: returned after ${awayMs}ms")
             isDistracted = false

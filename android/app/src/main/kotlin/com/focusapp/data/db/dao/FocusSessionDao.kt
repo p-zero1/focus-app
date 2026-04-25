@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.focusapp.data.db.entity.FocusSessionEntity
 import com.focusapp.domain.model.DailyFocusSummary
+import com.focusapp.domain.model.TagAggregate
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -102,4 +103,22 @@ interface FocusSessionDao {
      */
     @Query("SELECT COUNT(*) FROM focus_sessions WHERE start_time >= :sinceMs")
     suspend fun getSessionCountSince(sinceMs: Long): Int
+
+    /**
+     * Aggregates completed sessions by tag. Only non-null, non-empty tags are included.
+     * Column names must match [TagAggregate] field names for Room mapping.
+     */
+    @Query(
+        """
+        SELECT
+            tag,
+            SUM(actual_duration) / 60 AS totalMinutes,
+            COUNT(*)                  AS sessionCount
+        FROM focus_sessions
+        WHERE tag IS NOT NULL AND tag != ''
+        GROUP BY tag
+        ORDER BY totalMinutes DESC
+        """
+    )
+    fun getTagAggregates(): Flow<List<TagAggregate>>
 }

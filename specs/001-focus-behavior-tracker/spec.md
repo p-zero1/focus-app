@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-focus-behavior-tracker`  
 **Created**: 2026-04-24  
-**Status**: Draft  
+**Status**: In Progress  
 **Input**: User description: "A Focus Timer App = Timer + Distraction Detection + Analytics + Gamification"
 
 ## User Scenarios & Testing *(mandatory)*
@@ -72,7 +72,7 @@ A user completes a focus session every day and sees their streak counter increas
 1. **Given** the user completes a focus session, **When** the session ends, **Then** they are awarded XP points proportional to session duration.
 2. **Given** the user completes at least one session per day for consecutive days, **When** they open the app the next day, **Then** the streak counter reflects the correct number of consecutive days.
 3. **Given** a milestone is reached (e.g., total 2 hours in one day), **When** the system detects it, **Then** a badge notification appears and the badge is saved to the user's profile.
-4. **Given** the user has linked their account, **When** they open the Leaderboard, **Then** they see ranked weekly focus hours for themselves and friends/global users.
+4. *(V2)* **Given** the user has linked their account, **When** they open the Leaderboard, **Then** they see ranked weekly focus hours for themselves and friends/global users.
 
 ---
 
@@ -114,7 +114,7 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 - How does the system handle a session that runs beyond midnight — it should be attributed to the day it started.
 - What if the user denies notification permissions — distraction detection and smart reminders degrade gracefully; the app remains functional without them.
 - What happens if the user pauses a session — paused time should not count toward focus time but the session should not be discarded.
-- How does a streak handle a missed day — the streak resets to 0; there is no grace period unless the user has a premium "streak freeze" feature.
+- How does a streak handle a missed day — the streak resets to 1 on the next completed session; there is no grace period unless the user has a premium "streak freeze" feature.
 - What if two friends have the same XP — leaderboard shows them tied with the same rank.
 
 ## Requirements *(mandatory)*
@@ -150,7 +150,7 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 - **FR-016**: System MUST award XP points for each completed session: 10 XP per 5 minutes of actual focus time (e.g., 50 XP for a 25-minute session). Formula: `floor(actualDurationSeconds / 300) × 10`.
 - **FR-017**: System MUST maintain a consecutive-day streak counter that increments when at least one session is completed per calendar day.
 - **FR-018**: System MUST award badges when milestone conditions are met and notify the user in-app.
-- **FR-019**: System MUST display a leaderboard showing weekly focus hours for connected friends or global users (requires account creation).
+- **FR-019** *(V2)*: System MUST display a leaderboard showing weekly focus hours for connected friends or global users (requires account creation).
 
 **Study/Coding Mode**
 

@@ -143,11 +143,11 @@ All tasks defined in `tasks.md`. Implementation phases:
 |-------|-------|--------|
 | Phase 1 (tasks.md) | Setup — project skeleton, Gradle, Manifest, Nav scaffold (T001–T005) | ✅ DONE |
 | Phase 2 (tasks.md) | Foundational — DB, entities, DAOs, repositories, DI (T006–T026) | ✅ DONE |
-| Phase 3 (tasks.md) | US1 Smart Focus Timer — TimerService, TimerViewModel, TimerScreen (T027–T036) | ⬜ NEXT |
-| Phase 4 (tasks.md) | US2 Distraction Detection — DistractionMonitor, ScreenUnlockReceiver, warning UI (T037–T046) | ⬜ PENDING |
-| Phase 5 (tasks.md) | US3 Analytics Dashboard — charts, Focus Score, best-time insight (T047–T055) | ⬜ PENDING |
-| Phase 6 (tasks.md) | US4 Gamification — XP, streaks, badges, ProfileScreen (T056–T064) | ⬜ PENDING |
-| Phase 7 (tasks.md) | US5 Study Mode + Tagging — tag input, history filter (T065–T072) | ⬜ PENDING |
+| Phase 3 (tasks.md) | US1 Smart Focus Timer — TimerService, TimerViewModel, TimerScreen (T027–T036) | ✅ DONE |
+| Phase 4 (tasks.md) | US2 Distraction Detection — DistractionMonitor, ScreenUnlockReceiver, warning UI (T037–T046) | ✅ DONE |
+| Phase 5 (tasks.md) | US3 Analytics Dashboard — charts, Focus Score, best-time insight (T047–T055) | ✅ DONE |
+| Phase 6 (tasks.md) | US4 Gamification — XP, streaks, badges, ProfileScreen (T056–T064) | ✅ DONE |
+| Phase 7 (tasks.md) | US5 Study Mode + Tagging — tag input, history filter (T065–T072) | ✅ DONE |
 | Phase 8 (tasks.md) | US6 Smart Reminders — WorkManager, AlarmManager, SettingsScreen (T073–T080) | ⬜ V2 |
 | Phase N (tasks.md) | Polish — onboarding, empty states, accessibility, boot receiver (T081–T089) | ⬜ PENDING |
 

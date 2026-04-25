@@ -22,6 +22,9 @@ interface SessionRepository {
 
     fun getSessionsByTag(tag: String): Flow<List<FocusSession>>
 
+    /** Returns aggregated tag summaries ordered by total focus minutes descending. */
+    fun getTagAggregates(): Flow<List<TagAggregate>>
+
     suspend fun getCompletedCountSince(sinceMs: Long): Int
 
     suspend fun getTotalCompletedCount(): Int

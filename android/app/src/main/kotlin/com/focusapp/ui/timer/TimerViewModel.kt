@@ -7,11 +7,11 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.focusapp.data.prefs.AppPreferences
-import com.focusapp.domain.model.SessionConfig
+import com.focusapp.domain.model.Badge
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.TimerState
 import com.focusapp.domain.model.TimerStatus
+import com.focusapp.domain.usecase.BuildSessionConfigUseCase
 import com.focusapp.service.TimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -27,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TimerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val appPreferences: AppPreferences,
+    private val buildSessionConfigUseCase: BuildSessionConfigUseCase,
 ) : ViewModel() {
 
     private var timerService: TimerService? = null
@@ -54,6 +54,14 @@ class TimerViewModel @Inject constructor(
     private val _showDistractionWarning = MutableStateFlow(false)
     val showDistractionWarning: StateFlow<Boolean> = _showDistractionWarning.asStateFlow()
 
+    // Seconds the user was away in the most recent confirmed distraction (H3)
+    private val _distractionAwaySeconds = MutableStateFlow(0)
+    val distractionAwaySeconds: StateFlow<Int> = _distractionAwaySeconds.asStateFlow()
+
+    // Badge newly awarded at session end — drives BadgeAwardedDialog (H6)
+    private val _newBadge = MutableStateFlow<Badge?>(null)
+    val newBadge: StateFlow<Badge?> = _newBadge.asStateFlow()
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             val service = (binder as? TimerService.TimerBinder)?.getService() ?: return
@@ -61,11 +69,21 @@ class TimerViewModel @Inject constructor(
             viewModelScope.launch {
                 var prevDistractionCount = 0
                 var prevStatus = TimerStatus.IDLE
+                var prevAwaySeconds = 0
                 service.timerState.collect { state ->
                     // Distraction warning — trigger whenever count increases
                     if (state.distractionCount > prevDistractionCount) {
                         prevDistractionCount = state.distractionCount
                         triggerDistractionWarning()
+                    }
+                    // Update away-duration when UserReturned fires (H3)
+                    if (state.lastDistractionAwaySeconds != prevAwaySeconds && state.lastDistractionAwaySeconds > 0) {
+                        prevAwaySeconds = state.lastDistractionAwaySeconds
+                        _distractionAwaySeconds.value = state.lastDistractionAwaySeconds
+                    }
+                    // Badge celebration — show first newly awarded badge (H6)
+                    if (state.newlyAwardedBadges.isNotEmpty() && _newBadge.value == null) {
+                        _newBadge.value = state.newlyAwardedBadges.first()
                     }
                     // Break prompt — only when a focus interval finishes (not when a break ends)
                     val comingFromBreak = prevStatus == TimerStatus.BREAK
@@ -123,6 +141,12 @@ class TimerViewModel @Inject constructor(
         _showDistractionWarning.value = false
     }
 
+    fun onDismissBadge() {
+        _newBadge.value = null
+        // Clear badges from service state so dialog doesn't reappear on recompose
+        _timerState.value = _timerState.value.copy(newlyAwardedBadges = emptyList())
+    }
+
     fun onModeSelected(mode: SessionMode) {
         _selectedMode.value = mode
     }
@@ -135,21 +159,12 @@ class TimerViewModel @Inject constructor(
         _customTag.value = tag
     }
 
-    /**
-     * Reads configurable Pomodoro/DeepWork durations from [AppPreferences] (DataStore) —
-     * the canonical source of truth per Constitution Principle III.
-     * Business rule (mode → duration mapping) lives here, not hardcoded as literals.
-     */
-    private suspend fun buildSessionConfig(): SessionConfig {
-        val mode = _selectedMode.value
-        val durationSeconds = when (mode) {
-            SessionMode.POMODORO -> appPreferences.pomodoroFocusMinutes.first() * 60
-            SessionMode.CUSTOM, SessionMode.STUDY -> _customDurationMinutes.value * 60
-            SessionMode.DEEP_WORK -> appPreferences.pomodoroFocusMinutes.first() * 60 * 2
-        }
-        val tag = _customTag.value.trim().ifEmpty { null }
-        return SessionConfig(mode = mode, durationSeconds = durationSeconds, tag = tag)
-    }
+    private suspend fun buildSessionConfig(): SessionConfig =
+        buildSessionConfigUseCase(
+            mode = _selectedMode.value,
+            customDurationMinutes = _customDurationMinutes.value,
+            tag = _customTag.value.trim().ifEmpty { null },
+        )
 
     private fun triggerDistractionWarning() {
         _showDistractionWarning.value = true

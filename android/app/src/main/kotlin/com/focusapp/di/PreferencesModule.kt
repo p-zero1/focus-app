@@ -2,6 +2,8 @@ package com.focusapp.di
 
 import android.content.Context
 import com.focusapp.data.prefs.AppPreferences
+import com.focusapp.domain.preferences.FocusPreferences
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,10 +13,16 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object PreferencesModule {
+abstract class PreferencesModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences =
-        AppPreferences(context)
+    abstract fun bindFocusPreferences(impl: AppPreferences): FocusPreferences
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideAppPreferences(@ApplicationContext context: Context): AppPreferences =
+            AppPreferences(context)
+    }
 }

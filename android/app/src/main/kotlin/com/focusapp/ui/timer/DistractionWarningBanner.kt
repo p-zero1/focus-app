@@ -27,11 +27,14 @@ import androidx.compose.ui.unit.dp
 /**
  * Slide-in banner shown at the top of the timer screen when a distraction is detected.
  * Auto-dismissed by [TimerViewModel] after 4 seconds; also dismisses on tap.
+ *
+ * [awaySeconds] > 0 means a UserReturned event fired and we can show how long they were away.
  */
 @Composable
 fun DistractionWarningBanner(
     visible: Boolean,
     onDismiss: () -> Unit,
+    awaySeconds: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -59,8 +62,13 @@ fun DistractionWarningBanner(
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                val bannerText = if (awaySeconds > 0) {
+                    "You were away for ${awaySeconds}s — stay on track!"
+                } else {
+                    "You broke focus! Stay on track \uD83D\uDCAA"
+                }
                 Text(
-                    text = "You broke focus! Stay on track \uD83D\uDCAA",
+                    text = bannerText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.weight(1f),

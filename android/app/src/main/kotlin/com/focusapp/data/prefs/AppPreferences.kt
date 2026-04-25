@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.focusapp.domain.preferences.FocusPreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -16,7 +17,7 @@ import javax.inject.Singleton
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_prefs")
 
 @Singleton
-class AppPreferences @Inject constructor(private val context: Context) {
+class AppPreferences @Inject constructor(private val context: Context) : FocusPreferences {
 
     // ---- Keys ----
 

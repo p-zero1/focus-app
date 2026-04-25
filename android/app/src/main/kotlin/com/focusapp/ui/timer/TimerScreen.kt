@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.TimerStatus
+import com.focusapp.ui.profile.BadgeAwardedDialog
 
 @Composable
 fun TimerScreen(
@@ -57,11 +58,18 @@ fun TimerScreen(
     val customTag by viewModel.customTag.collectAsState()
     val showBreakPrompt by viewModel.showBreakPrompt.collectAsState()
     val showDistractionWarning by viewModel.showDistractionWarning.collectAsState()
+    val distractionAwaySeconds by viewModel.distractionAwaySeconds.collectAsState()
+    val newBadge by viewModel.newBadge.collectAsState()
 
     // Bind / unbind service with the composable lifecycle
     DisposableEffect(Unit) {
         viewModel.bindService()
         onDispose { viewModel.unbindService() }
+    }
+
+    // Badge celebration dialog — shown when a new badge is awarded after session completion
+    newBadge?.let { badge ->
+        BadgeAwardedDialog(badge = badge, onDismiss = viewModel::onDismissBadge)
     }
 
     // Navigate to session detail when a session just finished.
@@ -96,6 +104,7 @@ fun TimerScreen(
         DistractionWarningBanner(
             visible = showDistractionWarning,
             onDismiss = viewModel::onDismissDistractionWarning,
+            awaySeconds = distractionAwaySeconds,
             modifier = Modifier.fillMaxWidth(),
         )
 

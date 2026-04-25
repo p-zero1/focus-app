@@ -44,10 +44,14 @@ class SessionRepositoryImpl @Inject constructor(
         sessionDao.getAll().map { list -> list.map { it.toDomain() } }
 
     override fun getSessionsByDateRange(startMs: Long, endMs: Long): Flow<List<FocusSession>> =
-        sessionDao.getByDateRange(startMs, endMs).map { list -> list.map { it.toDomain() } }
+        sessionDao.getByDateRange(clampStartForTier(startMs = startMs), endMs)
+            .map { list -> list.map { it.toDomain() } }
 
     override fun getSessionsByTag(tag: String): Flow<List<FocusSession>> =
         sessionDao.getByTag(tag).map { list -> list.map { it.toDomain() } }
+
+    override fun getTagAggregates(): Flow<List<TagAggregate>> =
+        sessionDao.getTagAggregates()
 
     override suspend fun getCompletedCountSince(sinceMs: Long): Int =
         sessionDao.getCompletedCountSince(sinceMs)
@@ -71,6 +75,12 @@ class SessionRepositoryImpl @Inject constructor(
 
     override suspend fun getSessionCountSince(sinceMs: Long): Int =
         sessionDao.getSessionCountSince(sinceMs)
+
+    // ---- Tier gating (dormant — H4) ----
+
+    /** Identity function today (isPremium hardcoded true). Wired in as the hook point for
+     *  future free-tier date clamping without changing callers. */
+    private fun clampStartForTier(isPremium: Boolean = true, startMs: Long): Long = startMs
 
     // ---- Mappers ----
 

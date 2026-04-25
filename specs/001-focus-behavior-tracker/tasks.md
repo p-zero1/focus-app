@@ -131,6 +131,35 @@
 
 ---
 
+## Fix Pass (Post-Analysis — Issues C1–C5, H1–H5, M1–M4, C6, H6–H7, M5–M8, L1–L2)
+
+- [x] C1 — Extract `FocusPreferences` domain interface; `AppPreferences` implements it; `PreferencesModule` adds `@Binds`; `BuildSessionConfigUseCase` uses the interface
+- [x] C2 — Add stub `BootReceiver` and `ReminderReceiver` registered in `AndroidManifest.xml`
+- [x] C3 — Unit tests: `LogDistractionUseCaseTest`, `ComputeFocusScoreUseCaseTest`, `GetBestFocusTimeUseCaseTest`
+- [x] C4 — DND suppression in `TimerService` for `DEEP_WORK` mode only; `ACCESS_NOTIFICATION_POLICY` permission added to manifest
+- [x] C5 — Extract week-bounds logic into `GetCurrentWeekBoundsUseCase`; injected into `AnalyticsViewModel`
+- [x] H1 — Wire `AnalyticsScreen` into `AppNavGraph` (replace placeholder `Text("Analytics")`)
+- [x] H2 — `BuildSessionConfigUseCase` encapsulates mode→duration mapping; `TimerViewModel` delegates to it
+- [x] H3 — `lastDistractionAwaySeconds` added to `TimerState`; set on `UserReturned` in `TimerService`; `DistractionWarningBanner` shows away duration
+- [x] H4 — Dormant `clampStartForTier()` hook in `SessionRepositoryImpl` (identity fn, `isPremium=true`)
+- [x] M1 — `plan.md` Phase 3–5 status updated to ✅ DONE
+- [x] M3 — 30-second distraction timeout added to `DistractionMonitor` (`startDistractionTimeout()`)
+- [x] M4 — Fix pass tasks documented here
+
+### Fix Pass 2 (Post-Phase-6 Analysis — Issues C6, H6–H7, M5–M8, L1–L2)
+
+- [x] C6 — Unit tests added: `AwardXpUseCaseTest`, `UpdateStreakUseCaseTest`, `EvaluateBadgesUseCaseTest`, `TestFakes.kt` shared fakes
+- [x] H6 — Badge pipeline wired: `newlyAwardedBadges: List<Badge>` added to `TimerState`; `TimerService.endSession()` and `onFocusTimerFinished()` capture and set badge list; `TimerViewModel` exposes `newBadge: StateFlow<Badge?>`; `TimerScreen` shows `BadgeAwardedDialog`
+- [x] H7 — `spec.md` FR-019 annotated with `*(V2)*`
+- [x] M5 — `ProfileViewModel` wires `dailyMinutesToday` from `SessionRepository.getSessionsByDateRange()` for today's bounds
+- [x] M6 — `AwardXpUseCase` now returns `Int` (the XP amount); `CompleteSessionUseCase` uses the returned value for `xpAwarded` and drops its private `computeXp()` — single source of truth for XP formula
+- [x] M7 — `spec.md` US4 AC4 (leaderboard) annotated as `*(V2)*`
+- [x] M8 — `BadgeId.DEEP_DIVER` description corrected to "Complete a single focus session of 2 hours or more" (matches `EvaluateBadgesUseCase` condition `actualDuration >= 7200`)
+- [x] L1 — `spec.md` streak edge-case wording corrected: "resets to 1 on next session" (not "resets to 0")
+- [x] L2 — `spec.md` status updated from "Draft" to "In Progress"
+
+---
+
 ## Phase 6: User Story 4 — Gamification & Streaks (Priority: P4)
 
 **Goal**: Users earn XP per session, maintain a consecutive-day streak, and see their progress on the Profile screen. Badges are awarded at milestones.
@@ -139,15 +168,15 @@
 
 ### Implementation for User Story 4
 
-- [ ] T056 Create `AwardXpUseCase.kt` in `domain/usecase/AwardXpUseCase.kt`: computes XP = `floor(actualDuration / 300) × 10`; updates `UserProfile.totalXp` via repository
-- [ ] T057 [US4] Create `UpdateStreakUseCase.kt` in `domain/usecase/UpdateStreakUseCase.kt`: compares today's ISO date to `streakLastUpdatedDate`; increments streak if today is the next calendar day; resets to 1 if gap > 1 day; updates `longestStreak` if exceeded
-- [ ] T058 [US4] Create `EvaluateBadgesUseCase.kt` in `domain/usecase/EvaluateBadgesUseCase.kt`: checks all 5 badge conditions against current `UserProfile` and session aggregate stats; inserts new `Badge` rows for newly earned badges; returns list of newly earned badges
-- [ ] T059 [US4] Hook `AwardXpUseCase`, `UpdateStreakUseCase`, and `EvaluateBadgesUseCase` into `CompleteSessionUseCase.kt` so they run atomically when a session finishes
-- [ ] T060 [US4] Create `ProfileViewModel.kt` in `ui/profile/ProfileViewModel.kt`: collects `UserProfile` Flow and `Badge` list Flow from repositories; exposes `ProfileUiState` (xp, level, streak, longestStreak, dailyGoalProgress, badges, newBadge)
-- [ ] T061 [US4] Create `ProfileScreen.kt` Compose screen in `ui/profile/ProfileScreen.kt`: shows streak flame counter, XP bar with level, daily goal ring, badge gallery grid, settings icon (top-right)
-- [ ] T062 [US4] Create `StreakCounter.kt` Compose component in `ui/profile/StreakCounter.kt`: large flame icon + number; colour shifts at 7-day milestone
-- [ ] T063 [US4] Create `BadgeGallery.kt` Compose component in `ui/profile/BadgeGallery.kt`: lazy grid of badge items; earned badges are full-colour; unearned badges are greyed-out with lock icon
-- [ ] T064 [US4] Create `BadgeAwardedDialog.kt` Compose component in `ui/profile/BadgeAwardedDialog.kt`: full-screen celebration overlay shown when `newBadge != null` in `ProfileUiState`; auto-dismisses after 3 seconds
+- [x] T056 Create `AwardXpUseCase.kt` in `domain/usecase/AwardXpUseCase.kt`: computes XP = `floor(actualDuration / 300) × 10`; updates `UserProfile.totalXp` via repository
+- [x] T057 [US4] Create `UpdateStreakUseCase.kt` in `domain/usecase/UpdateStreakUseCase.kt`: compares today's ISO date to `streakLastUpdatedDate`; increments streak if today is the next calendar day; resets to 1 if gap > 1 day; updates `longestStreak` if exceeded
+- [x] T058 [US4] Create `EvaluateBadgesUseCase.kt` in `domain/usecase/EvaluateBadgesUseCase.kt`: checks all 5 badge conditions against current `UserProfile` and session aggregate stats; inserts new `Badge` rows for newly earned badges; returns list of newly earned badges
+- [x] T059 [US4] Hook `AwardXpUseCase`, `UpdateStreakUseCase`, and `EvaluateBadgesUseCase` into `CompleteSessionUseCase.kt` so they run atomically when a session finishes
+- [x] T060 [US4] Create `ProfileViewModel.kt` in `ui/profile/ProfileViewModel.kt`: collects `UserProfile` Flow and `Badge` list Flow from repositories; exposes `ProfileUiState` (xp, level, streak, longestStreak, dailyGoalProgress, badges, newBadge)
+- [x] T061 [US4] Create `ProfileScreen.kt` Compose screen in `ui/profile/ProfileScreen.kt`: shows streak flame counter, XP bar with level, daily goal ring, badge gallery grid, settings icon (top-right)
+- [x] T062 [US4] Create `StreakCounter.kt` Compose component in `ui/profile/StreakCounter.kt`: large flame icon + number; colour shifts at 7-day milestone
+- [x] T063 [US4] Create `BadgeGallery.kt` Compose component in `ui/profile/BadgeGallery.kt`: lazy grid of badge items; earned badges are full-colour; unearned badges are greyed-out with lock icon
+- [x] T064 [US4] Create `BadgeAwardedDialog.kt` Compose component in `ui/profile/BadgeAwardedDialog.kt`: full-screen celebration overlay shown when `newBadge != null` in `ProfileUiState`; auto-dismisses after 3 seconds
 
 **Checkpoint**: XP, streak, and badge award all fire correctly after session completion. Profile screen shows accurate state.
 
@@ -161,14 +190,14 @@
 
 ### Implementation for User Story 5
 
-- [ ] T065 Add `tagInput` field to `TimerScreen.kt`: text input shown when mode is STUDY or CUSTOM; passes tag string into `SessionConfig` on start
+- [x] T065 Add `tagInput` field to `TimerScreen.kt`: text input shown when mode is STUDY or CUSTOM; passes tag string into `SessionConfig` on start *(already present in `CustomDurationPicker` from Phase 3)*
 - [x] T066 [US5] Add `getSessionsByTag(tag: String): Flow<List<FocusSession>>` query to `FocusSessionDao.kt` *(already present in FocusSessionDao from Phase 2)*
-- [ ] T067 [US5] Add `getTagAggregates(): Flow<List<TagAggregate>>` query to `FocusSessionDao.kt` using SQL GROUP BY on tag column; returns tag + totalMinutes + sessionCount
+- [x] T067 [US5] Add `getTagAggregates(): Flow<List<TagAggregate>>` query to `FocusSessionDao.kt` using SQL GROUP BY on tag column; returns tag + totalMinutes + sessionCount
 - [x] T068 [US5] Create `TagAggregate.kt` data class in `domain/model/TagAggregate.kt` (tag, totalMinutes, sessionCount) *(already exists from Phase 2)*
-- [ ] T069 [US5] Create `HistoryViewModel.kt` in `ui/history/HistoryViewModel.kt`: exposes all sessions Flow, tag filter chips list from `getTagAggregates()`, selected tag state, filtered sessions list
-- [ ] T070 [US5] Create `HistoryScreen.kt` Compose screen in `ui/history/HistoryScreen.kt`: horizontally scrollable tag filter chip row at top; lazy column of `SessionRow` composables below; tapping a session navigates to `session_detail/{id}`
-- [ ] T071 [US5] Create `SessionRow.kt` Compose component in `ui/history/SessionRow.kt`: shows mode icon, tag badge, formatted duration, distraction count, and formatted date
-- [ ] T072 [US5] Create `TagSummaryRow.kt` Compose component in `ui/history/TagSummaryRow.kt`: shows tag name + total hours in a summary card at the top of filtered results
+- [x] T069 [US5] Create `HistoryViewModel.kt` in `ui/history/HistoryViewModel.kt`: exposes all sessions Flow, tag filter chips list from `getTagAggregates()`, selected tag state, filtered sessions list
+- [x] T070 [US5] Create `HistoryScreen.kt` Compose screen in `ui/history/HistoryScreen.kt`: horizontally scrollable tag filter chip row at top; lazy column of `SessionRow` composables below; tapping a session navigates to `session_detail/{id}`
+- [x] T071 [US5] Create `SessionRow.kt` Compose component in `ui/history/SessionRow.kt`: shows mode icon, tag badge, formatted duration, distraction count, and formatted date
+- [x] T072 [US5] Create `TagSummaryRow.kt` Compose component in `ui/history/TagSummaryRow.kt`: shows tag name + total hours in a summary card at the top of filtered results
 
 **Checkpoint**: Study Mode sessions can be tagged, filtered, and aggregated in the History screen.
 

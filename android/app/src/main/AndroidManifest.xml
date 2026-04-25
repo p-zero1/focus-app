@@ -23,6 +23,9 @@
     <!-- Wake lock held briefly by timer foreground service -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- DND / notification policy control (required for DoNotDisturb in Deep Work mode) -->
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
     <application
         android:name=".FocusApplication"
         android:allowBackup="true"

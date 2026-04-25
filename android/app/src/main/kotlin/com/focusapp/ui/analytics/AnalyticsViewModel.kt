@@ -6,16 +6,15 @@ import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.repository.SessionRepository
 import com.focusapp.domain.usecase.ComputeFocusScoreUseCase
 import com.focusapp.domain.usecase.GetBestFocusTimeUseCase
+import com.focusapp.domain.usecase.GetCurrentWeekBoundsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 
 enum class AnalyticsViewMode { DAILY, WEEKLY }
@@ -34,6 +33,7 @@ class AnalyticsViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val computeFocusScore: ComputeFocusScoreUseCase,
     private val getBestFocusTime: GetBestFocusTimeUseCase,
+    private val getCurrentWeekBounds: GetCurrentWeekBoundsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
@@ -51,8 +51,8 @@ class AnalyticsViewModel @Inject constructor(
 
     private fun loadWeeklyData() {
         viewModelScope.launch {
-            val (weekStart, weekEnd) = currentWeekBounds()
-            sessionRepository.getWeeklySessions(weekStart, weekEnd).collectLatest { summaries ->
+            val bounds = getCurrentWeekBounds()
+            sessionRepository.getWeeklySessions(bounds.startMs, bounds.endMs).collectLatest { summaries ->
                 val score = computeFocusScore(summaries)
                 _uiState.value = _uiState.value.copy(
                     weeklyData = summaries,
@@ -94,15 +94,4 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    // ---- Helpers ----
-
-    private fun currentWeekBounds(): Pair<Long, Long> {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now()
-        val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-        val weekEnd = weekStart.plusWeeks(1)
-        val startMs = weekStart.atStartOfDay(zone).toInstant().toEpochMilli()
-        val endMs = weekEnd.atStartOfDay(zone).toInstant().toEpochMilli()
-        return startMs to endMs
-    }
 }

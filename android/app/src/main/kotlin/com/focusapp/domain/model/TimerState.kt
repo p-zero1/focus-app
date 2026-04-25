@@ -12,6 +12,10 @@ data class TimerState(
     val currentSessionId: Long? = null,
     val distractionCount: Int = 0,
     val pomodoroIntervalsDone: Int = 0,
+    /** Seconds the user was away in the most recent confirmed distraction. 0 = no distraction yet. */
+    val lastDistractionAwaySeconds: Int = 0,
+    /** Badges newly awarded at the end of the most recent session; empty otherwise. */
+    val newlyAwardedBadges: List<Badge> = emptyList(),
 ) {
     companion object {
         val IDLE = TimerState()

@@ -1,5 +1,6 @@
 package com.focusapp.domain.repository
 
+import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.model.FocusSession
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.TagAggregate
@@ -28,4 +29,13 @@ interface SessionRepository {
     suspend fun getActiveSession(): FocusSession?
 
     suspend fun deleteSession(id: Long)
+
+    /** Returns per-day summaries for sessions within [weekStartMs, weekEndMs). */
+    fun getWeeklySessions(weekStartMs: Long, weekEndMs: Long): Flow<List<DailyFocusSummary>>
+
+    /** Returns the day summary for [date] ("YYYY-MM-DD"), or null if no sessions. */
+    suspend fun getDailyFocusMinutes(date: String): DailyFocusSummary?
+
+    /** Total sessions (any status) started on or after [sinceMs]. */
+    suspend fun getSessionCountSince(sinceMs: Long): Int
 }

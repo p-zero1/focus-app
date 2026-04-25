@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.focusapp.data.db.entity.FocusSessionEntity
+import com.focusapp.domain.model.DailyFocusSummary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -53,4 +54,52 @@ interface FocusSessionDao {
     /** Returns the currently ACTIVE session if one exists. */
     @Query("SELECT * FROM focus_sessions WHERE status = 'ACTIVE' LIMIT 1")
     suspend fun getActiveSession(): FocusSessionEntity?
+
+    // ---- Analytics queries (T047) ----
+
+    /**
+     * Aggregates sessions by calendar day within [weekStartMs, weekEndMs).
+     * Returns one [DailyFocusSummary] row per day that has at least one session.
+     * Column names must match [DailyFocusSummary] field names exactly for Room mapping.
+     */
+    @Query(
+        """
+        SELECT
+            date(start_time / 1000, 'unixepoch', 'localtime') AS date,
+            SUM(actual_duration) / 60                          AS totalMinutes,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedSessions,
+            COUNT(*)                                           AS startedSessions,
+            SUM(distraction_total_seconds) / 60               AS totalDistractionMinutes
+        FROM focus_sessions
+        WHERE start_time >= :weekStartMs AND start_time < :weekEndMs
+        GROUP BY date(start_time / 1000, 'unixepoch', 'localtime')
+        ORDER BY date ASC
+        """
+    )
+    fun getWeeklySessions(weekStartMs: Long, weekEndMs: Long): Flow<List<DailyFocusSummary>>
+
+    /**
+     * Aggregates sessions for a single calendar [date] (format "YYYY-MM-DD").
+     * Returns null if no sessions exist for that day.
+     */
+    @Query(
+        """
+        SELECT
+            date(start_time / 1000, 'unixepoch', 'localtime') AS date,
+            SUM(actual_duration) / 60                          AS totalMinutes,
+            SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedSessions,
+            COUNT(*)                                           AS startedSessions,
+            SUM(distraction_total_seconds) / 60               AS totalDistractionMinutes
+        FROM focus_sessions
+        WHERE date(start_time / 1000, 'unixepoch', 'localtime') = :date
+        """
+    )
+    suspend fun getDailyFocusMinutes(date: String): DailyFocusSummary?
+
+    /**
+     * Total number of sessions (any status) started on or after [sinceMs].
+     * Used by [GetBestFocusTimeUseCase] to check the 5-session threshold.
+     */
+    @Query("SELECT COUNT(*) FROM focus_sessions WHERE start_time >= :sinceMs")
+    suspend fun getSessionCountSince(sinceMs: Long): Int
 }

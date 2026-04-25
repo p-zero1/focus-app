@@ -3,6 +3,7 @@ package com.focusapp.data.repository
 import com.focusapp.data.db.dao.DistractionEventDao
 import com.focusapp.data.db.dao.FocusSessionDao
 import com.focusapp.data.db.entity.FocusSessionEntity
+import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.model.FocusSession
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
@@ -61,6 +62,15 @@ class SessionRepositoryImpl @Inject constructor(
         distractionDao.deleteBySessionId(id)
         sessionDao.deleteById(id)
     }
+
+    override fun getWeeklySessions(weekStartMs: Long, weekEndMs: Long): Flow<List<DailyFocusSummary>> =
+        sessionDao.getWeeklySessions(weekStartMs, weekEndMs)
+
+    override suspend fun getDailyFocusMinutes(date: String): DailyFocusSummary? =
+        sessionDao.getDailyFocusMinutes(date)
+
+    override suspend fun getSessionCountSince(sinceMs: Long): Int =
+        sessionDao.getSessionCountSince(sinceMs)
 
     // ---- Mappers ----
 

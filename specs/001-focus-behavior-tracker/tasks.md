@@ -117,15 +117,15 @@
 
 ### Implementation for User Story 3
 
-- [ ] T047 Add analytics queries to `FocusSessionDao.kt`: `getDailyFocusMinutes(date)`, `getWeeklySessions(weekStart, weekEnd)` returning `Flow<List<DailyFocusSummary>>`, `getSessionCountSince(epochMs)`
-- [ ] T048 [US3] Create `DailyFocusSummary.kt` data class (date string, totalMinutes, completedSessions, startedSessions, totalDistractionMinutes) in `domain/model/DailyFocusSummary.kt`
-- [ ] T049 [US3] Create `ComputeFocusScoreUseCase.kt` in `domain/usecase/ComputeFocusScoreUseCase.kt`: implements formula from research.md (clamp(completedRatio×70 + distractionFreeRatio×30, 0, 100))
-- [ ] T050 [US3] Create `GetBestFocusTimeUseCase.kt` in `domain/usecase/GetBestFocusTimeUseCase.kt`: buckets sessions into 2-hour slots, finds slot with lowest average distractionCount; returns null if fewer than 5 sessions
-- [ ] T051 [US3] Create `AnalyticsViewModel.kt` in `ui/analytics/AnalyticsViewModel.kt`: collects `getDailyFocusMinutes` Flow, calls focus score and best-time use cases, exposes `AnalyticsUiState` (dailyData, weeklyData, focusScore, bestTimeInsight, viewMode toggle)
-- [ ] T052 [US3] Create `AnalyticsScreen.kt` Compose screen in `ui/analytics/AnalyticsScreen.kt`: daily/weekly toggle, bar chart composable, Focus Score card, best-time insight card, empty state when no sessions
-- [ ] T053 [US3] Create `FocusBarChart.kt` Compose component in `ui/analytics/FocusBarChart.kt`: renders a horizontal scrollable bar chart from `List<DailyFocusSummary>`; bar height = total focus minutes; tapping a bar navigates to that day's sessions in History
-- [ ] T054 [US3] Create `FocusScoreCard.kt` Compose component in `ui/analytics/FocusScoreCard.kt`: circular gauge showing 0–100 score with colour gradient (red → yellow → green)
-- [ ] T055 [US3] Create `BestTimeInsightCard.kt` Compose component in `ui/analytics/BestTimeInsightCard.kt`: displays AI insight text (e.g., "You focus best between 10–12 AM"); hidden until 5+ sessions exist
+- [x] T047 Add analytics queries to `FocusSessionDao.kt`: `getDailyFocusMinutes(date)`, `getWeeklySessions(weekStart, weekEnd)` returning `Flow<List<DailyFocusSummary>>`, `getSessionCountSince(epochMs)`
+- [x] T048 [US3] Create `DailyFocusSummary.kt` data class (date string, totalMinutes, completedSessions, startedSessions, totalDistractionMinutes) in `domain/model/DailyFocusSummary.kt`
+- [x] T049 [US3] Create `ComputeFocusScoreUseCase.kt` in `domain/usecase/ComputeFocusScoreUseCase.kt`: implements formula from research.md (clamp(completedRatio×70 + distractionFreeRatio×30, 0, 100))
+- [x] T050 [US3] Create `GetBestFocusTimeUseCase.kt` in `domain/usecase/GetBestFocusTimeUseCase.kt`: buckets sessions into 2-hour slots, finds slot with lowest average distractionCount; returns null if fewer than 5 sessions
+- [x] T051 [US3] Create `AnalyticsViewModel.kt` in `ui/analytics/AnalyticsViewModel.kt`: collects `getDailyFocusMinutes` Flow, calls focus score and best-time use cases, exposes `AnalyticsUiState` (dailyData, weeklyData, focusScore, bestTimeInsight, viewMode toggle)
+- [x] T052 [US3] Create `AnalyticsScreen.kt` Compose screen in `ui/analytics/AnalyticsScreen.kt`: daily/weekly toggle, bar chart composable, Focus Score card, best-time insight card, empty state when no sessions
+- [x] T053 [US3] Create `FocusBarChart.kt` Compose component in `ui/analytics/FocusBarChart.kt`: renders a horizontal scrollable bar chart from `List<DailyFocusSummary>`; bar height = total focus minutes; tapping a bar navigates to that day's sessions in History
+- [x] T054 [US3] Create `FocusScoreCard.kt` Compose component in `ui/analytics/FocusScoreCard.kt`: circular gauge showing 0–100 score with colour gradient (red → yellow → green)
+- [x] T055 [US3] Create `BestTimeInsightCard.kt` Compose component in `ui/analytics/BestTimeInsightCard.kt`: displays AI insight text (e.g., "You focus best between 10–12 AM"); hidden until 5+ sessions exist
 
 **Checkpoint**: Analytics tab shows correct charts and focus score populated from real session data.
 

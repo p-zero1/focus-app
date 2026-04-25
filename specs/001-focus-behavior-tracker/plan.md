@@ -152,6 +152,22 @@ All tasks defined in `tasks.md`. Implementation phases:
 | Phase 8 (tasks.md) | US6 Smart Reminders — WorkManager, AlarmManager, SettingsScreen (T073–T080) | ⬜ V2 |
 | Phase N (tasks.md) | Polish — onboarding, empty states, accessibility, boot receiver (T081–T089) | ✅ DONE |
 
+## V1 Ship Status
+
+| Item | Status | Notes |
+|------|--------|-------|
+| PR #1 | ✅ Open | https://github.com/p-zero1/focus-app/pull/1 — `001-focus-behavior-tracker` → `master` |
+| GitHub token `ghp_5SV6...` | ⚠️ REVOKE | Was briefly in `.claude/settings.local.json`; removed in commit `b77f385`. Revoke at https://github.com/settings/tokens |
+| Secret scan hook | ✅ Live | `~/.claude/secret-scan.sh` wired into global `PreToolUse` hook — blocks `git add/commit` if credentials detected |
+| Device validation (T090) | ⬜ Pending | Install APK on Android 8+ device; verify SC-001 (launch ≤10 s), SC-002 (distraction ≤5 s), SC-005 (analytics ≤2 s) |
+
+## Next Steps (V2)
+
+1. Merge PR #1 after device validation
+2. US6 Smart Reminders (T073–T080) — WorkManager + AlarmManager
+3. Premium tier — wire real tier detection into `clampStartForTier()` in `SessionRepositoryImpl` (stub is already in place)
+4. Leaderboard (FR-007)
+
 #### Phase 4 Detail: US2 Distraction Detection (T037–T046)
 
 **Prerequisite**: Phase 3 (TimerService running) must be complete first.

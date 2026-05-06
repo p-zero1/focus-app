@@ -1,5 +1,6 @@
 package com.focusapp.ui.profile
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,12 +27,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 
 private val xpBarGradient = Brush.linearGradient(
@@ -139,21 +146,45 @@ fun ProfileScreen(
             }
         }
 
-        // Stats row
+        // Daily goal ring + stats row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            StatCard(
-                label    = "Sessions",
-                value    = "${state.totalSessionsCompleted}",
+            Card(
+                modifier = Modifier.weight(1.1f),
+                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DailyGoalRing(
+                        minutesToday  = state.dailyMinutesToday,
+                        goalMinutes   = state.dailyGoalMinutes,
+                        modifier      = Modifier
+                            .size(96.dp)
+                            .semantics {
+                                contentDescription =
+                                    "${state.dailyMinutesToday} of ${state.dailyGoalMinutes} minutes today"
+                            },
+                    )
+                    Text(
+                        text  = "Today's Goal",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Column(
                 modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                label    = "Best Streak",
-                value    = "${state.longestStreak}d",
-                modifier = Modifier.weight(1f),
-            )
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatCard(label = "Sessions", value = "${state.totalSessionsCompleted}")
+                StatCard(label = "Best Streak", value = "${state.longestStreak}d")
+            }
         }
 
         // Badges
@@ -180,11 +211,11 @@ private fun StatCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -194,6 +225,62 @@ private fun StatCard(
             )
             Text(
                 text  = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DailyGoalRing(
+    minutesToday: Int,
+    goalMinutes: Int,
+    modifier: Modifier = Modifier,
+) {
+    val progress = (minutesToday.toFloat() / goalMinutes.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val isComplete = progress >= 1f
+    val trackColor = Color(0xFF23233D)
+    val progressColor = if (isComplete) Color(0xFF4CAF50) else Color(0xFFFFB347)
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
+            val diameter = size.minDimension - stroke.width
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+            // Track ring
+            drawArc(
+                color      = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter  = false,
+                topLeft    = topLeft,
+                size       = arcSize,
+                style      = stroke,
+            )
+            // Progress arc
+            if (progress > 0f) {
+                drawArc(
+                    color      = progressColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * progress,
+                    useCenter  = false,
+                    topLeft    = topLeft,
+                    size       = arcSize,
+                    style      = stroke,
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text       = "$minutesToday",
+                fontSize   = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color      = if (isComplete) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text  = "/$goalMinutes",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

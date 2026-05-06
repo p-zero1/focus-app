@@ -50,7 +50,7 @@ class CompleteSessionUseCase @Inject constructor(
             else                                      -> SessionOutcome.INTERRUPTED
         }
 
-        val xp = awardXp(actualDuration)
+        val xp = awardXp(actualDuration, outcome)
         val focusScore = computeFocusScore(
             completed = status == SessionStatus.COMPLETED,
             distractionTotalSeconds = session.distractionTotalSeconds,

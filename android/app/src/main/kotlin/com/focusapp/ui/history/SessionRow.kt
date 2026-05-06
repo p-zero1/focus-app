@@ -5,9 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +37,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.focusapp.domain.model.FocusSession
 import com.focusapp.domain.model.SessionMode
+import com.focusapp.domain.model.SessionOutcome
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -47,17 +51,39 @@ fun SessionRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accentColor = when (session.sessionOutcome) {
+        SessionOutcome.CLEAN       -> Color(0xFF4CAF50)
+        SessionOutcome.INTERRUPTED -> Color(0xFFFFB347)
+        SessionOutcome.FAILED      -> Color(0xFFFF6B6B)
+        null                       -> Color.Transparent
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clip(rowShape)
             .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = "Session on ${formatDate(session.startTime)}" }
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .semantics { contentDescription = "Session on ${formatDate(session.startTime)}" },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Left outcome accent strip
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(accentColor),
+        )
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+
         // Mode icon — 38 dp square card (F07: purple-tinted bg + icon)
         Box(
             modifier = Modifier
@@ -137,6 +163,7 @@ fun SessionRow(
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onSurface,
         )
+        } // end inner Row
     }
 }
 

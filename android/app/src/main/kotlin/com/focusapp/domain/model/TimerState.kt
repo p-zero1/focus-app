@@ -22,6 +22,8 @@ data class TimerState(
     val focusStrictness: FocusStrictness = FocusStrictness.RELAXED,
     /** Computed outcome once the session completes; null while session is running. */
     val sessionOutcome: SessionOutcome? = null,
+    /** User's stated goal for this session (mirrors SessionConfig.tag). */
+    val sessionGoal: String? = null,
 ) {
     companion object {
         val IDLE = TimerState()

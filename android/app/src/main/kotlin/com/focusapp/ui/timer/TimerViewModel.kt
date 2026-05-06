@@ -64,6 +64,15 @@ class TimerViewModel @Inject constructor(
     private val _newBadge = MutableStateFlow<Badge?>(null)
     val newBadge: StateFlow<Badge?> = _newBadge.asStateFlow()
 
+    private val audioPlayer = FocusAudioPlayer()
+    private val _soundMode = MutableStateFlow(FocusAudioPlayer.SoundMode.OFF)
+    val soundMode: StateFlow<FocusAudioPlayer.SoundMode> = _soundMode.asStateFlow()
+
+    fun onSoundModeChanged(mode: FocusAudioPlayer.SoundMode) {
+        _soundMode.value = mode
+        audioPlayer.setMode(mode)
+    }
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
             val service = (binder as? TimerService.TimerBinder)?.getService() ?: return
@@ -187,6 +196,7 @@ class TimerViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        audioPlayer.release()
         unbindService()
         super.onCleared()
     }

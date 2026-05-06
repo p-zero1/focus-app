@@ -205,6 +205,7 @@ class TimerService : Service() {
                     distractionCount = 0,
                     pomodoroIntervalsDone = pomodoroIntervalsDone,
                     focusStrictness = config.focusStrictness,
+                    sessionGoal = config.tag,
                 )
                 runCountdown(config.durationSeconds, sessionId)
             } catch (e: Exception) {

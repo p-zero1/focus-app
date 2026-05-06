@@ -362,6 +362,30 @@ Parallel (T032 complete):
 
 ---
 
+## Phase 9 — Competitive Parity Features
+
+Competitive research (Forest, Focusmate, Freedom, Serene, Habitica, Finch, Flora) identified these gaps. Items marked [x] are already shipped.
+
+### Shipped in v1 Feature Pack
+
+- [x] **T-CP01** — Pomodoro series counter in UI: shows "Pomodoro N of 4" during active sessions (`TimerScreen.kt`)
+- [x] **T-CP02** — Session goal input for all modes (not just Custom): tag field visible on Pomodoro, Deep Work, Study; live overlay during session (`TimerScreen.kt`)
+- [x] **T-CP03** — Ambient focus sounds: WHITE_NOISE + RAIN generated programmatically via `AudioTrack`; `SoundToggleRow` in timer UI (`FocusAudioPlayer.kt`, `TimerViewModel.kt`, `TimerScreen.kt`)
+- [x] **T-CP04** — Clean session XP bonus: 1.5× multiplier for `SessionOutcome.CLEAN` in `AwardXpUseCase.kt`
+- [x] **T-CP05** — Daily goal ring on Profile: Canvas `drawArc` progress ring with amber/green color transition (`ProfileScreen.kt`)
+- [x] **T-CP06** — Session outcome accent strip in history: left 3 dp bar (green/amber/red) on each `SessionRow` based on `sessionOutcome` (`SessionRow.kt`)
+
+### Planned — V2 Competitive Features
+
+- [ ] **T-CP10** — Scheduled focus sessions: let users schedule a session start time with a reminder notification; uses `AlarmManager` + `NotificationManager`; files: `ScheduleSessionUseCase.kt`, `SessionAlarmReceiver.kt`, `ScheduleScreen.kt`
+- [ ] **T-CP11** — Focus streak calendar: GitHub-style contribution grid showing daily focus minutes; intensity-coded cells; files: `StreakCalendarCard.kt` on `AnalyticsScreen`
+- [ ] **T-CP12** — Session templates: save preset (mode + duration + tag + strictness) as a named template for one-tap start; files: `SessionTemplate` entity, `TemplateDao`, `TemplatesScreen.kt`
+- [ ] **T-CP13** — App usage breakdown post-session: show which distracting apps were opened and for how long; requires `UsageStatsManager` data already collected; files: `SessionDetailScreen.kt`
+- [ ] **T-CP14** — Study mode grouped timer: Pomodoro-style cycles but with user-defined work/break ratio (not fixed 25/5); extends existing `SessionConfig`; files: `StudyTimerConfig.kt`, `TimerService` extension
+- [ ] **T-CP15** — Social focus rooms (V3): real-time presence with other users during a session; requires backend (Firebase Realtime DB or Supabase); deferred until backend is in place
+
+---
+
 ## Notes
 
 - [P] tasks = independent files, no shared in-progress dependencies
@@ -370,3 +394,4 @@ Parallel (T032 complete):
 - Do not begin US2 until `TimerService` foreground service is running (US1 complete)
 - `CompleteSessionUseCase` is the central hook: US1 owns it; US4 adds XP/streak calls; US3 adds focus score; add in order
 - App blocking (FR-010) is out of scope for all phases — deferred to V3
+- Competitive parity Phase 9 tasks tracked above; T-CP10 through T-CP14 are V2 scope

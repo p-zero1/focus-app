@@ -1,8 +1,11 @@
 package com.focusapp.ui.timer
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,9 +28,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -43,13 +47,16 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,6 +65,7 @@ import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.TimerStatus
 import com.focusapp.ui.profile.BadgeAwardedDialog
+import androidx.compose.foundation.layout.height
 
 @Composable
 fun TimerScreen(
@@ -65,16 +73,17 @@ fun TimerScreen(
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
-    val timerState           by viewModel.timerState.collectAsState()
-    val selectedMode         by viewModel.selectedMode.collectAsState()
-    val selectedStrictness   by viewModel.selectedStrictness.collectAsState()
+    val timerState            by viewModel.timerState.collectAsState()
+    val selectedMode          by viewModel.selectedMode.collectAsState()
+    val selectedStrictness    by viewModel.selectedStrictness.collectAsState()
     val customDurationSeconds by viewModel.customDurationSeconds.collectAsState()
-    val customTag            by viewModel.customTag.collectAsState()
-    val showBreakPrompt      by viewModel.showBreakPrompt.collectAsState()
+    val customTag             by viewModel.customTag.collectAsState()
+    val showBreakPrompt       by viewModel.showBreakPrompt.collectAsState()
     val showDistractionWarning by viewModel.showDistractionWarning.collectAsState()
     val distractionAwaySeconds by viewModel.distractionAwaySeconds.collectAsState()
-    val distractionAppName   by viewModel.distractionAppName.collectAsState()
-    val newBadge             by viewModel.newBadge.collectAsState()
+    val distractionAppName    by viewModel.distractionAppName.collectAsState()
+    val newBadge              by viewModel.newBadge.collectAsState()
+    val soundMode             by viewModel.soundMode.collectAsState()
 
     DisposableEffect(Unit) {
         viewModel.bindService()
@@ -97,6 +106,16 @@ fun TimerScreen(
         )
     }
 
+    // F03: orb grows from 200dp (idle) to 260dp (active/paused/break)
+    val orbSize by animateDpAsState(
+        targetValue = when (timerState.status) {
+            TimerStatus.ACTIVE, TimerStatus.PAUSED, TimerStatus.BREAK -> 260.dp
+            else -> 200.dp
+        },
+        animationSpec = tween(durationMillis = 500),
+        label = "orb_size",
+    )
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -108,16 +127,16 @@ fun TimerScreen(
         Spacer(modifier = Modifier.height(4.dp))
 
         DistractionWarningBanner(
-            visible    = showDistractionWarning,
-            onDismiss  = viewModel::onDismissDistractionWarning,
+            visible     = showDistractionWarning,
+            onDismiss   = viewModel::onDismissDistractionWarning,
             awaySeconds = distractionAwaySeconds,
-            appName    = distractionAppName,
-            modifier   = Modifier.fillMaxWidth(),
+            appName     = distractionAppName,
+            modifier    = Modifier.fillMaxWidth(),
         )
 
-        // Orb + countdown overlay
+        // Orb + countdown overlay — F01: font 56sp idle / 64sp active; F03: animated size
         Box(
-            modifier = Modifier.size(220.dp),
+            modifier = Modifier.size(orbSize),
             contentAlignment = Alignment.Center,
         ) {
             FocusOrb(
@@ -125,69 +144,93 @@ fun TimerScreen(
                 isDistracting = showDistractionWarning,
                 modifier      = Modifier.fillMaxSize(),
             )
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+            val isActive = timerState.status != TimerStatus.IDLE && timerState.status != TimerStatus.FINISHED
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text  = formatSeconds(timerState.remainingSeconds),
                     style = TextStyle(
-                        fontSize           = 42.sp,
-                        fontWeight         = FontWeight.Bold,
+                        fontSize            = if (isActive) 64.sp else 56.sp,
+                        fontWeight          = FontWeight.Bold,
                         fontFeatureSettings = "tnum",
+                        shadow = Shadow(
+                            color       = Color.Black.copy(alpha = 0.5f),
+                            offset      = Offset.Zero,
+                            blurRadius  = 20f,
+                        ),
                     ),
                     color = Color.White,
                     modifier = Modifier.semantics {
                         contentDescription = "Remaining time: ${formatSeconds(timerState.remainingSeconds)}"
                     },
                 )
+                // F15: elapsed when active, status label otherwise
+                val subLabel = if (timerState.status == TimerStatus.ACTIVE) {
+                    "${formatSeconds(timerState.elapsedSeconds)} elapsed"
+                } else {
+                    timerState.status.displayName
+                }
                 Text(
-                    text  = timerState.status.displayName,
+                    text  = subLabel,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.White.copy(alpha = 0.65f),
                 )
+                // Pomodoro series indicator
+                if (selectedMode == SessionMode.POMODORO && timerState.pomodoroIntervalsDone > 0) {
+                    Text(
+                        text  = "Pomodoro ${timerState.pomodoroIntervalsDone % 4 + 1} of 4",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFFFB347).copy(alpha = 0.9f),
+                    )
+                }
+                // Session goal overlay — shown when a tag/goal is set and session is running
+                val activeGoal = timerState.sessionGoal
+                if (isActive && !activeGoal.isNullOrBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text  = "📌 $activeGoal",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.75f),
+                    )
+                }
             }
         }
 
+        // F10: distraction count as red dot pill
         AnimatedVisibility(
             visible = timerState.distractionCount > 0,
             enter   = fadeIn(),
             exit    = fadeOut(),
         ) {
             Row(
+                modifier = Modifier
+                    .background(Color(0x26FF6B6B), RoundedCornerShape(50.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment   = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Canvas(modifier = Modifier.size(8.dp)) {
+                    drawCircle(Color(0xFFFF6B6B))
+                }
                 Text(
-                    text  = "${timerState.distractionCount} distraction${if (timerState.distractionCount != 1) "s" else ""}",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelLarge,
+                    text  = "${timerState.distractionCount}",
+                    color = Color(0xFFFF8E8E),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
                 )
             }
         }
 
+        // Mode selector + pickers — only while idle; F09: strictness moved after picker
         AnimatedVisibility(visible = timerState.status == TimerStatus.IDLE) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 ModeSelector(
                     selectedMode   = selectedMode,
                     onModeSelected = viewModel::onModeSelected,
                     modifier       = Modifier.fillMaxWidth(),
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                StrictnessSelector(
-                    selected   = selectedStrictness,
-                    onSelected = viewModel::onStrictnessSelected,
-                    modifier   = Modifier.fillMaxWidth(),
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text  = selectedMode.pickerLabel,
@@ -195,43 +238,65 @@ fun TimerScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // key(selectedMode) resets LazyListState when mode changes
-                key(selectedMode) {
-                    TimerWheelPicker(
-                        durationSeconds   = customDurationSeconds,
-                        minSeconds        = selectedMode.minSeconds,
-                        maxSeconds        = selectedMode.maxSeconds,
-                        onDurationChanged = viewModel::onCustomDurationSecondsChanged,
-                        modifier          = Modifier.fillMaxWidth(),
-                    )
+                // F14: wheel picker wrapped in dark card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = RoundedCornerShape(16.dp),
+                    colors   = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                    border   = androidx.compose.foundation.BorderStroke(
+                        1.dp, Color(0x0FFFFFFF),
+                    ),
+                ) {
+                    // key(selectedMode) resets LazyListState when mode changes
+                    key(selectedMode) {
+                        TimerWheelPicker(
+                            durationSeconds   = customDurationSeconds,
+                            minSeconds        = selectedMode.minSeconds,
+                            maxSeconds        = selectedMode.maxSeconds,
+                            onDurationChanged = viewModel::onCustomDurationSecondsChanged,
+                            modifier          = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                        )
+                    }
                 }
 
-                if (selectedMode == SessionMode.CUSTOM || selectedMode == SessionMode.STUDY) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value          = customTag,
-                        onValueChange  = viewModel::onTagChanged,
-                        label          = { Text("Tag (optional)") },
-                        placeholder    = { Text("e.g. DSA, Project X") },
-                        singleLine     = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        modifier       = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp),
-                    )
-                }
+                // F09: strictness now renders after the picker
+                StrictnessSelector(
+                    selected   = selectedStrictness,
+                    onSelected = viewModel::onStrictnessSelected,
+                    modifier   = Modifier.fillMaxWidth(),
+                )
+
+                OutlinedTextField(
+                    value           = customTag,
+                    onValueChange   = viewModel::onTagChanged,
+                    label           = { Text("What's your focus? (optional)") },
+                    placeholder     = { Text(selectedMode.goalPlaceholder) },
+                    singleLine      = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                    modifier        = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                )
             }
         }
 
         TimerControls(
-            status    = timerState.status,
-            onStart   = viewModel::onStartSession,
-            onPause   = viewModel::onPause,
-            onResume  = viewModel::onResume,
-            onStop    = viewModel::onStop,
+            status      = timerState.status,
+            onStart     = viewModel::onStartSession,
+            onPause     = viewModel::onPause,
+            onResume    = viewModel::onResume,
+            onStop      = viewModel::onStop,
             onSkipBreak = viewModel::onSkipBreak,
+        )
+
+        SoundToggleRow(
+            current    = soundMode,
+            onSelected = viewModel::onSoundModeChanged,
+            modifier   = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -273,97 +338,107 @@ private fun TimerControls(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         when (status) {
             TimerStatus.IDLE, TimerStatus.FINISHED -> {
-                GradientPillButton(
+                // F02: full-width Start button, height 60dp, radius 18dp
+                GradientButton(
                     gradient = startGradient,
                     onClick  = onStart,
                     label    = "Start session",
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(Icons.Default.PlayArrow, null, tint = Color.White)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Start", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Start session", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
             TimerStatus.ACTIVE -> {
-                // Pause — 52 dp circle
+                // F16: pause button uses glass white instead of dark surface
                 CircleIconButton(
-                    onClick  = onPause,
-                    label    = "Pause session",
-                    tint     = Color.White,
-                    bg       = Color(0xFF23233D),
+                    size    = 52.dp,
+                    bg      = Color(0x0FFFFFFF),
+                    onClick = onPause,
+                    label   = "Pause session",
                 ) { Icon(Icons.Default.Pause, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
-                // Stop — 52 dp circle, red gradient
                 GradientCircleButton(
+                    size     = 52.dp,
                     gradient = stopGradient,
                     onClick  = onStop,
                     label    = "Stop session",
                 ) { Icon(Icons.Default.Stop, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
             TimerStatus.PAUSED -> {
-                GradientPillButton(
+                GradientButton(
                     gradient = startGradient,
                     onClick  = onResume,
                     label    = "Resume session",
+                    modifier = Modifier.weight(1f),
                 ) {
                     Icon(Icons.Default.PlayArrow, null, tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("Resume", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text("Resume", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
                 GradientCircleButton(
+                    size     = 52.dp,
                     gradient = stopGradient,
                     onClick  = onStop,
                     label    = "Stop session",
                 ) { Icon(Icons.Default.Stop, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
             TimerStatus.BREAK -> {
-                GradientPillButton(
+                GradientButton(
                     gradient = startGradient,
                     onClick  = onSkipBreak,
                     label    = "Skip break",
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Skip Break", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Text("Skip Break", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }
     }
 }
 
+// F02: full-width gradient button (height 60dp, radius 18dp)
 @Composable
-private fun GradientPillButton(
+private fun GradientButton(
     gradient: Brush,
     onClick: () -> Unit,
     label: String,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50.dp))
+        modifier = modifier
+            .height(60.dp)
+            .clip(RoundedCornerShape(18.dp))
             .background(gradient)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = label }
-            .padding(horizontal = 32.dp, vertical = 14.dp),
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) { content() }
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) { content() }
     }
 }
 
 @Composable
 private fun CircleIconButton(
+    size: Dp,
+    bg: Color,
     onClick: () -> Unit,
     label: String,
-    tint: Color,
-    bg: Color,
     content: @Composable () -> Unit,
 ) {
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(size)
             .clip(CircleShape)
             .background(bg)
             .clickable(onClick = onClick)
@@ -374,6 +449,7 @@ private fun CircleIconButton(
 
 @Composable
 private fun GradientCircleButton(
+    size: Dp,
     gradient: Brush,
     onClick: () -> Unit,
     label: String,
@@ -381,7 +457,7 @@ private fun GradientCircleButton(
 ) {
     Box(
         modifier = Modifier
-            .size(52.dp)
+            .size(size)
             .clip(CircleShape)
             .background(gradient)
             .clickable(onClick = onClick)
@@ -411,22 +487,22 @@ private fun StrictnessSelector(
         ) {
             FocusStrictness.entries.forEach { strictness ->
                 FilterChip(
-                    selected  = strictness == selected,
-                    onClick   = { onSelected(strictness) },
-                    label     = { Text(strictness.label, maxLines = 1) },
-                    colors    = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor      = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor          = MaterialTheme.colorScheme.onPrimaryContainer,
-                        selectedLeadingIconColor    = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selected = strictness == selected,
+                    onClick  = { onSelected(strictness) },
+                    label    = { Text(strictness.label, maxLines = 1) },
+                    colors   = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor   = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor       = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     ),
-                    modifier  = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
         Text(
-            text  = selected.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text     = selected.description,
+            style    = MaterialTheme.typography.bodySmall,
+            color    = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp),
         )
     }
@@ -473,6 +549,53 @@ private fun BreakPromptDialog(
         confirmButton = { Button(onClick = onStartBreak) { Text("Take a Break") } },
         dismissButton = { TextButton(onClick = onSkip) { Text("Skip Break") } },
     )
+}
+
+// ---- Sound toggle ----
+
+@Composable
+private fun SoundToggleRow(
+    current: FocusAudioPlayer.SoundMode,
+    onSelected: (FocusAudioPlayer.SoundMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text  = "Sound",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FocusAudioPlayer.SoundMode.entries.forEach { mode ->
+            FilterChip(
+                selected = current == mode,
+                onClick  = { onSelected(mode) },
+                label    = { Text(mode.label, maxLines = 1) },
+                colors   = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor     = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+            )
+        }
+    }
+}
+
+private val FocusAudioPlayer.SoundMode.label: String get() = when (this) {
+    FocusAudioPlayer.SoundMode.OFF         -> "Off"
+    FocusAudioPlayer.SoundMode.WHITE_NOISE -> "White"
+    FocusAudioPlayer.SoundMode.RAIN        -> "Rain"
+}
+
+// ---- Mode extensions ----
+
+private val SessionMode.goalPlaceholder: String get() = when (this) {
+    SessionMode.POMODORO  -> "e.g. Review chapter 3"
+    SessionMode.DEEP_WORK -> "e.g. Architecture design"
+    SessionMode.CUSTOM    -> "e.g. DSA, Project X"
+    SessionMode.STUDY     -> "e.g. Calculus problems"
 }
 
 internal fun formatSeconds(totalSeconds: Int): String {

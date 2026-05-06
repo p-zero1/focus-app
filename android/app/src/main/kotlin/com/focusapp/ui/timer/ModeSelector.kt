@@ -26,10 +26,12 @@ fun ModeSelector(
             FilterChip(
                 selected = mode == selectedMode,
                 onClick = { onModeSelected(mode) },
-                label = { Text(mode.label) },
-                modifier = Modifier.semantics {
-                    contentDescription = "${mode.label} mode${if (mode == selectedMode) ", selected" else ""}"
-                },
+                label = { Text(mode.label, maxLines = 1) },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = "${mode.label} mode${if (mode == selectedMode) ", selected" else ""}"
+                    },
             )
         }
     }

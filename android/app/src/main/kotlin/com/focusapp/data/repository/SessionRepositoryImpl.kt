@@ -5,8 +5,10 @@ import com.focusapp.data.db.dao.FocusSessionDao
 import com.focusapp.data.db.entity.FocusSessionEntity
 import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.model.FocusSession
+import com.focusapp.domain.model.FocusStrictness
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
+import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.SessionStatus
 import com.focusapp.domain.model.TagAggregate
 import com.focusapp.domain.repository.SessionRepository
@@ -29,6 +31,7 @@ class SessionRepositoryImpl @Inject constructor(
             tag = config.tag,
             status = SessionStatus.ACTIVE.name,
             focusScore = null,
+            focusStrictness = config.focusStrictness.name,
         )
         return sessionDao.insert(entity)
     }
@@ -114,6 +117,11 @@ class SessionRepositoryImpl @Inject constructor(
         distractionTotalSeconds = distractionTotalSeconds,
         xpAwarded = xpAwarded,
         focusScore = focusScore,
+        focusStrictness = runCatching { FocusStrictness.valueOf(focusStrictness) }
+            .getOrDefault(FocusStrictness.RELAXED),
+        sessionOutcome = sessionOutcome?.let {
+            runCatching { SessionOutcome.valueOf(it) }.getOrNull()
+        },
     )
 
     private fun FocusSession.toEntity() = FocusSessionEntity(
@@ -129,5 +137,7 @@ class SessionRepositoryImpl @Inject constructor(
         distractionTotalSeconds = distractionTotalSeconds,
         xpAwarded = xpAwarded,
         focusScore = focusScore,
+        focusStrictness = focusStrictness.name,
+        sessionOutcome = sessionOutcome?.name,
     )
 }

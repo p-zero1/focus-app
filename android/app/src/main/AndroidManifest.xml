@@ -11,6 +11,11 @@
         tools:ignore="ProtectedPermissions"
         xmlns:tools="http://schemas.android.com/tools" />
 
+    <!-- Resolve display names for any installed app (Instagram, WhatsApp, etc.).
+         Android 11+ (API 30) package visibility blocks getApplicationInfo() for third-party
+         apps without this permission, causing names to fall back to the package suffix. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
     <!-- Push notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 

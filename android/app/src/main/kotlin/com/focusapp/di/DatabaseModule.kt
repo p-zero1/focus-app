@@ -35,7 +35,15 @@ object DatabaseModule {
             context,
             FocusDatabase::class.java,
             FocusDatabase.DATABASE_NAME,
-        ).build()
+        )
+            // addMigrations is intentionally omitted during development. A dev device may have
+            // a schema from a prior build where MIGRATION_1_2 already ran, causing SQLite to
+            // throw "duplicate column name" when the migration executes again. With no explicit
+            // migration registered, Room falls back to destructive recreation instead of
+            // propagating an unrecoverable exception.
+            // TODO: restore .addMigrations(FocusDatabase.MIGRATION_1_2) before production release.
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideFocusSessionDao(db: FocusDatabase): FocusSessionDao = db.focusSessionDao()

@@ -1,20 +1,25 @@
 package com.focusapp.domain.usecase
 
 import com.focusapp.domain.model.Badge
+import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.SessionStatus
 import com.focusapp.domain.repository.SessionRepository
 import com.focusapp.domain.repository.UserProfileRepository
 import javax.inject.Inject
 
 /**
- * Finalises an active session: sets status to COMPLETED or PARTIAL, records
- * actual duration, computes XP and Focus Score, then atomically:
+ * Finalises an active session: computes [SessionOutcome], sets status to COMPLETED or PARTIAL,
+ * records actual duration, computes XP and Focus Score, then atomically:
  * - Awards XP to the user profile
  * - Updates the daily streak
  * - Evaluates badge conditions
  * - Increments the total sessions-completed counter
  *
- * Returns any newly awarded [Badge]s so callers can trigger celebrations.
+ * Returns a [Pair] of (newly awarded badges, session outcome) so callers can
+ * trigger celebrations and update the live timer state.
+ *
+ * @param forceFail When true (e.g. HARDCORE enforcement), outcome is always [SessionOutcome.FAILED]
+ *                  regardless of distraction count.
  */
 class CompleteSessionUseCase @Inject constructor(
     private val sessionRepository: SessionRepository,
@@ -28,8 +33,10 @@ class CompleteSessionUseCase @Inject constructor(
         sessionId: Long,
         actualDuration: Int,
         endTime: Long,
-    ): List<Badge> {
-        val session = sessionRepository.getSessionById(sessionId) ?: return emptyList()
+        forceFail: Boolean = false,
+    ): Pair<List<Badge>, SessionOutcome> {
+        val session = sessionRepository.getSessionById(sessionId)
+            ?: return Pair(emptyList(), SessionOutcome.FAILED)
 
         val status = if (actualDuration >= session.plannedDuration) {
             SessionStatus.COMPLETED
@@ -37,15 +44,18 @@ class CompleteSessionUseCase @Inject constructor(
             SessionStatus.PARTIAL
         }
 
-        // Delegate XP computation to AwardXpUseCase (single source of truth for the formula)
-        // We call it early so xp is available for the session row — the use case also
-        // updates the profile internally, so we skip the standalone awardXp() call below.
+        val outcome = when {
+            forceFail || session.distractionCount > 3 -> SessionOutcome.FAILED
+            session.distractionCount == 0             -> SessionOutcome.CLEAN
+            else                                      -> SessionOutcome.INTERRUPTED
+        }
+
         val xp = awardXp(actualDuration)
         val focusScore = computeFocusScore(
             completed = status == SessionStatus.COMPLETED,
             distractionTotalSeconds = session.distractionTotalSeconds,
             actualDurationSeconds = actualDuration,
-        )  // delegates to ComputeFocusScoreUseCase — single source of truth for the formula
+        )
 
         val updatedSession = session.copy(
             status = status,
@@ -53,15 +63,14 @@ class CompleteSessionUseCase @Inject constructor(
             endTime = endTime,
             xpAwarded = xp,
             focusScore = focusScore,
+            sessionOutcome = outcome,
         )
         sessionRepository.updateSession(updatedSession)
 
-        // Gamification pipeline — XP already awarded above; remaining steps run after persist
         userProfileRepository.incrementSessionsCompleted()
         updateStreak()
         val newBadges = evaluateBadges(updatedSession)
 
-        return newBadges
+        return Pair(newBadges, outcome)
     }
-
 }

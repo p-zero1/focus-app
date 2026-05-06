@@ -1,43 +1,27 @@
 package com.focusapp.domain.usecase
 
+import com.focusapp.domain.model.FocusStrictness
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
-import com.focusapp.domain.preferences.FocusPreferences
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
- * Builds a [SessionConfig] from the user's mode selection and current preferences.
- *
- * Encapsulates the mode → duration mapping that was previously in [TimerViewModel],
- * satisfying Constitution Principle II (business logic belongs in use cases).
- *
- * Duration rules:
- * - POMODORO    → pomodoroFocusMinutes from preferences (clamped to [MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES])
- * - DEEP_WORK   → 2 × pomodoroFocusMinutes
- * - CUSTOM/STUDY → caller-supplied [customDurationMinutes], clamped to [MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES]
- *
- * FR-002: custom session durations are accepted from 5 to 180 minutes inclusive.
+ * Builds a [SessionConfig] from the user's mode selection and caller-supplied duration.
+ * All modes use caller-supplied [durationSeconds], clamped to valid bounds.
  */
-class BuildSessionConfigUseCase @Inject constructor(
-    private val prefs: FocusPreferences,
-) {
-    suspend operator fun invoke(
+class BuildSessionConfigUseCase @Inject constructor() {
+    operator fun invoke(
         mode: SessionMode,
-        customDurationMinutes: Int,
+        durationSeconds: Int,
         tag: String?,
+        strictness: FocusStrictness = FocusStrictness.RELAXED,
     ): SessionConfig {
-        val durationSeconds = when (mode) {
-            SessionMode.POMODORO -> prefs.pomodoroFocusMinutes.first() * 60
-            SessionMode.DEEP_WORK -> prefs.pomodoroFocusMinutes.first() * 60 * 2
-            SessionMode.CUSTOM, SessionMode.STUDY ->
-                customDurationMinutes.coerceIn(MIN_CUSTOM_MINUTES, MAX_CUSTOM_MINUTES) * 60
-        }
-        return SessionConfig(mode = mode, durationSeconds = durationSeconds, tag = tag)
+        val clamped = durationSeconds.coerceIn(MIN_DURATION_SECONDS, MAX_DURATION_SECONDS)
+        return SessionConfig(mode = mode, durationSeconds = clamped, tag = tag, focusStrictness = strictness)
     }
 
     companion object {
-        const val MIN_CUSTOM_MINUTES = 5
-        const val MAX_CUSTOM_MINUTES = 180
+        const val MIN_DURATION_SECONDS = 300    // 5 minutes
+        const val MAX_DURATION_SECONDS = 10800  // 3 hours
     }
 }

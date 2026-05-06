@@ -2,6 +2,7 @@ package com.focusapp.ui.onboarding
 
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.focusapp.ui.settings.UsagePermissionCard
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,

@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -32,9 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.focusapp.domain.model.DistractionEvent
-import com.focusapp.domain.model.DistractionType
 import com.focusapp.domain.model.FocusSession
-import com.focusapp.domain.model.SessionStatus
+import com.focusapp.domain.model.SessionOutcome
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,7 +94,7 @@ fun SessionDetailScreen(
         ) {
             SessionSummaryCard(session = session)
             if (uiState.distractions.isNotEmpty()) {
-                DistractionListCard(distractions = uiState.distractions)
+                TopFocusBreakersCard(distractions = uiState.distractions)
             }
         }
     }
@@ -124,7 +122,11 @@ private fun SessionSummaryCard(session: FocusSession) {
             HorizontalDivider()
 
             StatRow(label = "Duration", value = formatSeconds(session.actualDuration))
-            StatRow(label = "Status", value = session.status.name)
+            session.sessionOutcome?.let { outcome ->
+                StatRow(label = "Outcome", value = outcome.displayLabel)
+            }
+            StatRow(label = "Focus Mode", value = session.focusStrictness.name
+                .lowercase().replaceFirstChar { it.uppercase() })
             session.tag?.let { StatRow(label = "Tag", value = it) }
             session.focusScore?.let { StatRow(label = "Focus Score", value = "$it / 100") }
             StatRow(label = "XP Earned", value = "+${session.xpAwarded} XP")
@@ -145,56 +147,63 @@ private fun StatRow(label: String, value: String) {
     }
 }
 
-// ---- Distraction list ----
+// ---- Top Focus Breakers card ----
 
 @Composable
-private fun DistractionListCard(distractions: List<DistractionEvent>) {
+private fun TopFocusBreakersCard(distractions: List<DistractionEvent>) {
+    val ranked = distractions
+        .groupBy { it.appPackageName ?: "Screen unlock" }
+        .map { (name, events) -> Triple(name, events.size, events.sumOf { it.durationSeconds }) }
+        .sortedByDescending { it.third }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Distractions (${distractions.size})",
+                text = "Top Focus Breakers (${distractions.size})",
                 style = MaterialTheme.typography.titleSmall,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            distractions.forEach { event ->
-                DistractionRow(event = event)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            ranked.forEachIndexed { index, (appName, count, totalSecs) ->
+                FocusBreakerRow(appName = appName, count = count, totalSeconds = totalSecs)
+                if (index < ranked.lastIndex) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DistractionRow(event: DistractionEvent) {
+private fun FocusBreakerRow(appName: String, count: Int, totalSeconds: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(
-            imageVector = Icons.Default.Warning,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
+        Text(
+            text = appName,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
         )
-        Column(modifier = Modifier.weight(1f)) {
-            val label = when (event.type) {
-                DistractionType.APP_SWITCH -> event.appPackageName
-                    ?.substringAfterLast('.') ?: "App switch"
-                DistractionType.SCREEN_UNLOCK -> "Screen unlock"
-            }
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
-            Text(
-                text = formatSeconds(event.durationSeconds),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        val timeStr = SimpleDateFormat("h:mm a", Locale.getDefault())
-            .format(Date(event.timestamp))
-        Text(text = timeStr, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = "${count}\u00d7",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = formatSeconds(totalSeconds),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
+
+private val SessionOutcome.displayLabel: String
+    get() = when (this) {
+        SessionOutcome.CLEAN       -> "Clean 🎯"
+        SessionOutcome.INTERRUPTED -> "Interrupted"
+        SessionOutcome.FAILED      -> "Failed"
+    }
 
 private fun formatSeconds(totalSeconds: Int): String {
     val m = totalSeconds / 60

@@ -1,6 +1,8 @@
 package com.focusapp.domain.usecase
 
+import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.model.FocusSession
+import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.SessionStatus
 import com.focusapp.domain.model.TagAggregate
@@ -12,21 +14,29 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.focusapp.domain.model.SessionConfig
 
 class CompleteSessionUseCaseTest {
 
-    private val fakeRepo = FakeSessionRepository()
-    private val useCase = CompleteSessionUseCase(fakeRepo)
+    private val fakeSessionRepo = FakeCompleteSessionRepo()
+    private val fakeUserProfileRepo = FakeUserProfileRepository()
+    private val fakeBadgeRepo = FakeBadgeRepository()
+    private val useCase = CompleteSessionUseCase(
+        sessionRepository = fakeSessionRepo,
+        userProfileRepository = fakeUserProfileRepo,
+        awardXp = AwardXpUseCase(fakeUserProfileRepo),
+        updateStreak = UpdateStreakUseCase(fakeUserProfileRepo),
+        evaluateBadges = EvaluateBadgesUseCase(fakeBadgeRepo, fakeUserProfileRepo),
+        computeFocusScore = ComputeFocusScoreUseCase(),
+    )
 
     @Test
     fun `completed session when actualDuration meets planned gets COMPLETED status`() = runTest {
         val sessionId = 1L
-        fakeRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
+        fakeSessionRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
 
         useCase(sessionId, actualDuration = 1500, endTime = 9_000L)
 
-        val updated = fakeRepo.updatedSessions.last()
+        val updated = fakeSessionRepo.updatedSessions.last()
         assertEquals(SessionStatus.COMPLETED, updated.status)
         assertEquals(1500, updated.actualDuration)
         assertEquals(9_000L, updated.endTime)
@@ -35,38 +45,38 @@ class CompleteSessionUseCaseTest {
     @Test
     fun `early end gives PARTIAL status when actualDuration less than planned`() = runTest {
         val sessionId = 2L
-        fakeRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
+        fakeSessionRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
 
         useCase(sessionId, actualDuration = 600, endTime = 8_000L)
 
-        assertEquals(SessionStatus.PARTIAL, fakeRepo.updatedSessions.last().status)
+        assertEquals(SessionStatus.PARTIAL, fakeSessionRepo.updatedSessions.last().status)
     }
 
     @Test
     fun `xp awarded is proportional to actual duration (10 XP per 5 minutes)`() = runTest {
         val sessionId = 3L
-        fakeRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
+        fakeSessionRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
 
         useCase(sessionId, actualDuration = 1500, endTime = 0L)
 
         // 1500 s = 25 min → floor(1500 / 300) × 10 = 50 XP
-        assertEquals(50, fakeRepo.updatedSessions.last().xpAwarded)
+        assertEquals(50, fakeSessionRepo.updatedSessions.last().xpAwarded)
     }
 
     @Test
     fun `zero xp for very short session under 5 minutes`() = runTest {
         val sessionId = 4L
-        fakeRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
+        fakeSessionRepo.sessions[sessionId] = buildSession(id = sessionId, plannedDuration = 1500)
 
         useCase(sessionId, actualDuration = 120, endTime = 0L)
 
-        assertEquals(0, fakeRepo.updatedSessions.last().xpAwarded)
+        assertEquals(0, fakeSessionRepo.updatedSessions.last().xpAwarded)
     }
 
     @Test
     fun `focus score is 100 for distraction-free completed session`() = runTest {
         val sessionId = 5L
-        fakeRepo.sessions[sessionId] = buildSession(
+        fakeSessionRepo.sessions[sessionId] = buildSession(
             id = sessionId,
             plannedDuration = 1500,
             distractionTotalSeconds = 0,
@@ -74,7 +84,7 @@ class CompleteSessionUseCaseTest {
 
         useCase(sessionId, actualDuration = 1500, endTime = 0L)
 
-        val score = fakeRepo.updatedSessions.last().focusScore
+        val score = fakeSessionRepo.updatedSessions.last().focusScore
         assertNotNull(score)
         assertEquals(100, score)
     }
@@ -82,7 +92,7 @@ class CompleteSessionUseCaseTest {
     @Test
     fun `focus score is lower when distractions are present`() = runTest {
         val sessionId = 6L
-        fakeRepo.sessions[sessionId] = buildSession(
+        fakeSessionRepo.sessions[sessionId] = buildSession(
             id = sessionId,
             plannedDuration = 1500,
             distractionTotalSeconds = 750, // 50% of session time
@@ -90,7 +100,7 @@ class CompleteSessionUseCaseTest {
 
         useCase(sessionId, actualDuration = 1500, endTime = 0L)
 
-        val score = fakeRepo.updatedSessions.last().focusScore!!
+        val score = fakeSessionRepo.updatedSessions.last().focusScore!!
         assertTrue("Expected score < 100, got $score", score < 100)
         assertTrue("Expected score >= 0, got $score", score >= 0)
     }
@@ -100,7 +110,7 @@ class CompleteSessionUseCaseTest {
         // sessionId 99 doesn't exist in the fake repo
         useCase(sessionId = 99L, actualDuration = 500, endTime = 0L)
 
-        assertTrue(fakeRepo.updatedSessions.isEmpty())
+        assertTrue(fakeSessionRepo.updatedSessions.isEmpty())
     }
 
     // ---- Helpers ----
@@ -125,9 +135,9 @@ class CompleteSessionUseCaseTest {
     )
 }
 
-// ---- Minimal fake ----
+// ---- Fake specific to this test (unique name avoids conflict with other test files) ----
 
-private class FakeSessionRepository : SessionRepository {
+private class FakeCompleteSessionRepo : SessionRepository {
 
     val sessions = mutableMapOf<Long, FocusSession>()
     val updatedSessions = mutableListOf<FocusSession>()
@@ -138,8 +148,12 @@ private class FakeSessionRepository : SessionRepository {
     override fun getAllSessions(): Flow<List<FocusSession>> = flowOf(emptyList())
     override fun getSessionsByDateRange(startMs: Long, endMs: Long, isPremium: Boolean): Flow<List<FocusSession>> = flowOf(emptyList())
     override fun getSessionsByTag(tag: String): Flow<List<FocusSession>> = flowOf(emptyList())
+    override fun getTagAggregates(): Flow<List<TagAggregate>> = flowOf(emptyList())
     override suspend fun getCompletedCountSince(sinceMs: Long): Int = 0
     override suspend fun getTotalCompletedCount(): Int = 0
     override suspend fun getActiveSession(): FocusSession? = null
     override suspend fun deleteSession(id: Long) {}
+    override fun getWeeklySessions(weekStartMs: Long, weekEndMs: Long): Flow<List<DailyFocusSummary>> = flowOf(emptyList())
+    override suspend fun getDailyFocusMinutes(date: String): DailyFocusSummary? = null
+    override suspend fun getSessionCountSince(sinceMs: Long): Int = 0
 }

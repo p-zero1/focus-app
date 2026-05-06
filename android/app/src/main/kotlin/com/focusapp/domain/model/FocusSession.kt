@@ -13,6 +13,8 @@ data class FocusSession(
     val distractionTotalSeconds: Int,
     val xpAwarded: Int,
     val focusScore: Int?,
+    val focusStrictness: FocusStrictness = FocusStrictness.RELAXED,
+    val sessionOutcome: SessionOutcome? = null,
 ) {
     val isCompleted: Boolean get() = status == SessionStatus.COMPLETED
     val isActive: Boolean get() = status == SessionStatus.ACTIVE

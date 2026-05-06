@@ -16,6 +16,12 @@ data class TimerState(
     val lastDistractionAwaySeconds: Int = 0,
     /** Badges newly awarded at the end of the most recent session; empty otherwise. */
     val newlyAwardedBadges: List<Badge> = emptyList(),
+    /** Display name of the app that triggered the most recent distraction (null for screen unlock). */
+    val lastDistractionAppName: String? = null,
+    /** Enforcement level active for the current session. */
+    val focusStrictness: FocusStrictness = FocusStrictness.RELAXED,
+    /** Computed outcome once the session completes; null while session is running. */
+    val sessionOutcome: SessionOutcome? = null,
 ) {
     companion object {
         val IDLE = TimerState()

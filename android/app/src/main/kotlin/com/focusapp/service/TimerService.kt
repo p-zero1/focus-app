@@ -12,8 +12,10 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.focusapp.domain.model.DistractionType
+import com.focusapp.domain.model.FocusStrictness
 import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
+import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.TimerState
 import com.focusapp.domain.model.TimerStatus
 import com.focusapp.domain.preferences.FocusPreferences
@@ -22,6 +24,7 @@ import com.focusapp.domain.usecase.LogDistractionUseCase
 import com.focusapp.domain.usecase.StartSessionUseCase
 import com.focusapp.ui.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,11 +48,20 @@ class TimerService : Service() {
     @Inject lateinit var distractionMonitor: DistractionMonitor
     @Inject lateinit var focusPreferences: FocusPreferences
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val serviceScope = CoroutineScope(
+        SupervisorJob() +
+        Dispatchers.Main +
+        // Without a handler, any child-coroutine exception bypasses SupervisorJob and reaches
+        // Thread.UncaughtExceptionHandler, killing the process. Log instead of crash.
+        CoroutineExceptionHandler { _, throwable ->
+            Timber.e(throwable, "TimerService: unhandled coroutine exception")
+        }
+    )
 
     private val _timerState = MutableStateFlow(TimerState.IDLE)
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
+    private var startSessionJob: Job? = null
     private var countdownJob: Job? = null
     private var sessionStartTimeMs: Long = 0L
 
@@ -62,6 +74,10 @@ class TimerService : Service() {
     // Pomodoro cycle tracking — persists across intervals in a chain
     private var pomodoroIntervalsDone = 0
     private var currentMode = SessionMode.POMODORO
+    private var currentStrictness = FocusStrictness.RELAXED
+
+    // Resolved display name of the distraction app (set on AppSwitch, cleared on session end)
+    private var distractionDisplayName: String? = null
 
     inner class TimerBinder : Binder() {
         fun getService(): TimerService = this@TimerService
@@ -92,18 +108,28 @@ class TimerService : Service() {
 
     /**
      * Collects [DistractionMonitor.events] for the lifetime of the service.
-     * AppSwitch/ScreenUnlock bump the live counter; UserReturned persists the event.
+     * AppSwitch/ScreenUnlock bump the live counter and apply enforcement;
+     * UserReturned persists the completed distraction to the database.
      */
     private fun collectDistractionEvents() {
         serviceScope.launch {
             distractionMonitor.events.collect { event ->
                 val sessionId = _timerState.value.currentSessionId ?: return@collect
                 when (event) {
-                    is DistractionMonitor.Event.AppSwitch,
+                    is DistractionMonitor.Event.AppSwitch -> {
+                        distractionDisplayName = event.appDisplayName
+                        _timerState.value = _timerState.value.copy(
+                            distractionCount = _timerState.value.distractionCount + 1,
+                            lastDistractionAppName = event.appDisplayName,
+                        )
+                        applyEnforcement()
+                    }
                     is DistractionMonitor.Event.ScreenUnlock -> {
+                        distractionDisplayName = null
                         _timerState.value = _timerState.value.copy(
                             distractionCount = _timerState.value.distractionCount + 1,
                         )
+                        applyEnforcement()
                     }
                     is DistractionMonitor.Event.UserReturned -> {
                         val awaySeconds = (event.awayDurationMs / 1000).toInt().coerceAtLeast(1)
@@ -112,12 +138,14 @@ class TimerService : Service() {
                         )
                         val type = if (event.packageName != null) DistractionType.APP_SWITCH
                                    else DistractionType.SCREEN_UNLOCK
+                        val displayName = distractionDisplayName
+                        distractionDisplayName = null
                         serviceScope.launch {
                             logDistractionUseCase(
                                 sessionId = sessionId,
                                 timestampMs = event.timestampMs,
                                 type = type,
-                                appPackageName = event.packageName,
+                                appPackageName = displayName ?: event.packageName,
                                 awayDurationMs = event.awayDurationMs,
                             )
                         }
@@ -127,29 +155,64 @@ class TimerService : Service() {
         }
     }
 
+    /**
+     * Applies enforcement action based on [currentStrictness].
+     * Called immediately after every AppSwitch / ScreenUnlock event.
+     */
+    private fun applyEnforcement() {
+        when (currentStrictness) {
+            FocusStrictness.RELAXED  -> { /* log only — no automated action */ }
+            FocusStrictness.STRICT   -> {
+                if (_timerState.value.status == TimerStatus.ACTIVE) {
+                    Timber.d("Enforcement: STRICT — auto-pausing session")
+                    pauseSession()
+                }
+            }
+            FocusStrictness.HARDCORE -> {
+                if (_timerState.value.status == TimerStatus.ACTIVE) {
+                    Timber.d("Enforcement: HARDCORE — ending session")
+                    endSession(forced = true)
+                }
+            }
+        }
+    }
+
     // ---- Public API (called via binder) ----
 
     fun startSession(config: SessionConfig) {
+        // Cancel any in-flight DB insert or countdown from a previous start attempt.
+        startSessionJob?.cancel()
         countdownJob?.cancel()
         sessionStartTimeMs = System.currentTimeMillis()
         currentMode = config.mode
+        currentStrictness = config.focusStrictness
 
         acquireWakeLock()
         registerScreenReceiver()
         distractionMonitor.startMonitoring(serviceScope)
         if (config.mode == SessionMode.DEEP_WORK) enableDnd()
 
-        serviceScope.launch {
-            val sessionId = startSessionUseCase(config, sessionStartTimeMs)
-            _timerState.value = TimerState(
-                status = TimerStatus.ACTIVE,
-                remainingSeconds = config.durationSeconds,
-                elapsedSeconds = 0,
-                currentSessionId = sessionId,
-                distractionCount = 0,
-                pomodoroIntervalsDone = pomodoroIntervalsDone,
-            )
-            runCountdown(config.durationSeconds, sessionId)
+        Timber.d("startSession: mode=${config.mode} duration=${config.durationSeconds}s")
+        startSessionJob = serviceScope.launch {
+            try {
+                val sessionId = startSessionUseCase(config, sessionStartTimeMs)
+                Timber.d("startSession: DB insert OK — sessionId=$sessionId")
+                _timerState.value = TimerState(
+                    status = TimerStatus.ACTIVE,
+                    remainingSeconds = config.durationSeconds,
+                    elapsedSeconds = 0,
+                    currentSessionId = sessionId,
+                    distractionCount = 0,
+                    pomodoroIntervalsDone = pomodoroIntervalsDone,
+                    focusStrictness = config.focusStrictness,
+                )
+                runCountdown(config.durationSeconds, sessionId)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Timber.e(e, "startSession: failed to create session — resetting to IDLE")
+                stopSessionMonitoring()
+                _timerState.value = TimerState.IDLE
+            }
         }
     }
 
@@ -171,27 +234,42 @@ class TimerService : Service() {
         runCountdown(state.remainingSeconds, state.currentSessionId ?: return)
     }
 
-    fun endSession() {
+    fun endSession(forced: Boolean = false) {
+        startSessionJob?.cancel()
         countdownJob?.cancel()
         val state = _timerState.value
         val sessionId = state.currentSessionId ?: return
 
         serviceScope.launch {
-            val newBadges = completeSessionUseCase(
+            val (newBadges, outcome) = completeSessionUseCase(
                 sessionId = sessionId,
                 actualDuration = state.elapsedSeconds,
                 endTime = System.currentTimeMillis(),
+                forceFail = forced,
             )
-            if (newBadges.isNotEmpty()) {
-                _timerState.value = TimerState.IDLE.copy(newlyAwardedBadges = newBadges)
-            } else {
-                _timerState.value = TimerState.IDLE
-            }
+            val idleState = TimerState.IDLE.copy(
+                newlyAwardedBadges = newBadges,
+                sessionOutcome = outcome,
+            )
+            _timerState.value = idleState
             updateNotification("Ready")
         }
         disableDnd()
         stopSessionMonitoring()
-        Timber.d("Session ended manually after ${state.elapsedSeconds}s")
+        Timber.d("Session ended (forced=$forced) after ${state.elapsedSeconds}s")
+    }
+
+    /** Manually start a break countdown (used by non-Pomodoro modes from the break prompt). */
+    fun startBreak(breakSeconds: Int = 300) {
+        countdownJob?.cancel()
+        _timerState.value = _timerState.value.copy(
+            status = TimerStatus.BREAK,
+            remainingSeconds = breakSeconds,
+            elapsedSeconds = 0,
+        )
+        updateNotification("Break time! ${breakSeconds / 60}m")
+        runBreakCountdown(breakSeconds)
+        Timber.d("Break started manually for ${breakSeconds}s")
     }
 
     /** Skip the running break and return to IDLE. */
@@ -200,6 +278,11 @@ class TimerService : Service() {
         _timerState.value = TimerState.IDLE
         updateNotification("Ready")
         Timber.d("Break skipped")
+    }
+
+    /** Called by ViewModel after the badge dialog is dismissed — prevents re-show on rebind. */
+    fun clearNewlyAwardedBadges() {
+        _timerState.value = _timerState.value.copy(newlyAwardedBadges = emptyList())
     }
 
     // ---- Countdown ----
@@ -226,15 +309,14 @@ class TimerService : Service() {
     private suspend fun onFocusTimerFinished(sessionId: Long) {
         val state = _timerState.value
         disableDnd()
-        // Stop distraction monitoring — user is between intervals, not in focus
         stopSessionMonitoring()
 
-        val newBadges = completeSessionUseCase(
+        val (newBadges, outcome) = completeSessionUseCase(
             sessionId = sessionId,
             actualDuration = state.elapsedSeconds,
             endTime = System.currentTimeMillis(),
         )
-        Timber.d("Focus session $sessionId finished — badges: ${newBadges.map { it.id }}")
+        Timber.d("Focus session $sessionId finished — outcome=$outcome badges: ${newBadges.map { it.id }}")
 
         if (currentMode == SessionMode.POMODORO) {
             pomodoroIntervalsDone++
@@ -250,16 +332,17 @@ class TimerService : Service() {
                 elapsedSeconds = 0,
                 pomodoroIntervalsDone = pomodoroIntervalsDone,
                 newlyAwardedBadges = newBadges,
+                sessionOutcome = outcome,
             )
             updateNotification("Break time! ${breakMinutes}m")
             runBreakCountdown(breakMinutes * 60)
         } else {
-            // FR-022: Study Mode fires an alarm-style notification (high-priority + vibration)
             if (currentMode == SessionMode.STUDY) fireStudyAlarm()
             _timerState.value = state.copy(
                 status = TimerStatus.FINISHED,
                 remainingSeconds = 0,
                 newlyAwardedBadges = newBadges,
+                sessionOutcome = outcome,
             )
             updateNotification("Session complete!")
         }
@@ -293,7 +376,7 @@ class TimerService : Service() {
         releaseWakeLock()
     }
 
-    // ---- DND (Deep Work only — C4) ----
+    // ---- DND (Deep Work only) ----
 
     private fun enableDnd() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -312,13 +395,13 @@ class TimerService : Service() {
         Timber.d("DND disabled")
     }
 
-    // ---- Wake lock (U2) ----
+    // ---- Wake lock ----
 
     private fun acquireWakeLock() {
         if (wakeLock?.isHeld == true) return
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FocusApp:TimerWakeLock")
-        wakeLock?.acquire(3L * 60 * 60 * 1_000) // 3 h max — prevents runaway hold
+        wakeLock?.acquire(3L * 60 * 60 * 1_000)
         Timber.d("WakeLock acquired")
     }
 
@@ -350,7 +433,6 @@ class TimerService : Service() {
     private fun createNotificationChannel() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Silent ongoing channel — used during active countdown
         val timerChannel = NotificationChannel(
             CHANNEL_ID,
             "Focus Timer",
@@ -359,7 +441,6 @@ class TimerService : Service() {
             description = "Shows live countdown while a focus session is active"
         }
 
-        // High-priority alarm channel — used when Study Mode session finishes (FR-022)
         val alarmChannel = NotificationChannel(
             ALARM_CHANNEL_ID,
             "Session Complete Alert",
@@ -390,11 +471,6 @@ class TimerService : Service() {
             )
             .build()
 
-    /**
-     * Fires a one-shot alarm-style notification for Study Mode session completion (FR-022).
-     * Uses [ALARM_CHANNEL_ID] (IMPORTANCE_HIGH + vibration) so it breaks through DND
-     * and is audible even when the app is backgrounded.
-     */
     private fun fireStudyAlarm() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = NotificationCompat.Builder(this, ALARM_CHANNEL_ID)

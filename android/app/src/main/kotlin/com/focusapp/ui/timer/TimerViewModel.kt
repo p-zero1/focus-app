@@ -8,6 +8,8 @@ import android.os.IBinder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.focusapp.domain.model.Badge
+import com.focusapp.domain.model.FocusStrictness
+import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.TimerState
 import com.focusapp.domain.model.TimerStatus
@@ -19,7 +21,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -32,33 +33,34 @@ class TimerViewModel @Inject constructor(
 
     private var timerService: TimerService? = null
 
-    // UI-facing timer state — bridged from the service once bound
     private val _timerState = MutableStateFlow(TimerState.IDLE)
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
-    // Selected mode and custom duration (UI input)
     private val _selectedMode = MutableStateFlow(SessionMode.POMODORO)
     val selectedMode: StateFlow<SessionMode> = _selectedMode.asStateFlow()
 
-    private val _customDurationMinutes = MutableStateFlow(25)
-    val customDurationMinutes: StateFlow<Int> = _customDurationMinutes.asStateFlow()
+    // Duration in seconds — default 25 min; updated when mode changes or user scrolls the picker
+    private val _customDurationSeconds = MutableStateFlow(SessionMode.POMODORO.defaultDurationSeconds)
+    val customDurationSeconds: StateFlow<Int> = _customDurationSeconds.asStateFlow()
 
     private val _customTag = MutableStateFlow("")
     val customTag: StateFlow<String> = _customTag.asStateFlow()
 
-    // Break prompt shown when non-break session reaches FINISHED
+    private val _selectedStrictness = MutableStateFlow(FocusStrictness.RELAXED)
+    val selectedStrictness: StateFlow<FocusStrictness> = _selectedStrictness.asStateFlow()
+
     private val _showBreakPrompt = MutableStateFlow(false)
     val showBreakPrompt: StateFlow<Boolean> = _showBreakPrompt.asStateFlow()
 
-    // Distraction warning banner — auto-dismissed after 4 s
     private val _showDistractionWarning = MutableStateFlow(false)
     val showDistractionWarning: StateFlow<Boolean> = _showDistractionWarning.asStateFlow()
 
-    // Seconds the user was away in the most recent confirmed distraction (H3)
+    private val _distractionAppName = MutableStateFlow<String?>(null)
+    val distractionAppName: StateFlow<String?> = _distractionAppName.asStateFlow()
+
     private val _distractionAwaySeconds = MutableStateFlow(0)
     val distractionAwaySeconds: StateFlow<Int> = _distractionAwaySeconds.asStateFlow()
 
-    // Badge newly awarded at session end — drives BadgeAwardedDialog (H6)
     private val _newBadge = MutableStateFlow<Badge?>(null)
     val newBadge: StateFlow<Badge?> = _newBadge.asStateFlow()
 
@@ -71,21 +73,18 @@ class TimerViewModel @Inject constructor(
                 var prevStatus = TimerStatus.IDLE
                 var prevAwaySeconds = 0
                 service.timerState.collect { state ->
-                    // Distraction warning — trigger whenever count increases
                     if (state.distractionCount > prevDistractionCount) {
                         prevDistractionCount = state.distractionCount
+                        _distractionAppName.value = state.lastDistractionAppName
                         triggerDistractionWarning()
                     }
-                    // Update away-duration when UserReturned fires (H3)
                     if (state.lastDistractionAwaySeconds != prevAwaySeconds && state.lastDistractionAwaySeconds > 0) {
                         prevAwaySeconds = state.lastDistractionAwaySeconds
                         _distractionAwaySeconds.value = state.lastDistractionAwaySeconds
                     }
-                    // Badge celebration — show first newly awarded badge (H6)
                     if (state.newlyAwardedBadges.isNotEmpty() && _newBadge.value == null) {
                         _newBadge.value = state.newlyAwardedBadges.first()
                     }
-                    // Break prompt — only when a focus interval finishes (not when a break ends)
                     val comingFromBreak = prevStatus == TimerStatus.BREAK
                     if (state.status == TimerStatus.FINISHED && !comingFromBreak) {
                         _showBreakPrompt.value = true
@@ -117,11 +116,8 @@ class TimerViewModel @Inject constructor(
     // ---- User actions ----
 
     fun onStartSession() {
-        viewModelScope.launch {
-            val config = buildSessionConfig()
-            timerService?.startSession(config)
-            _showBreakPrompt.value = false
-        }
+        timerService?.startSession(buildSessionConfig())
+        _showBreakPrompt.value = false
     }
 
     fun onPause() = timerService?.pauseSession()
@@ -131,6 +127,11 @@ class TimerViewModel @Inject constructor(
     fun onStop() = timerService?.endSession()
 
     fun onSkipBreak() = timerService?.skipBreak()
+
+    fun onStartBreak(breakSeconds: Int = 300) {
+        _showBreakPrompt.value = false
+        timerService?.startBreak(breakSeconds)
+    }
 
     fun onDismissBreakPrompt() {
         _showBreakPrompt.value = false
@@ -143,27 +144,36 @@ class TimerViewModel @Inject constructor(
 
     fun onDismissBadge() {
         _newBadge.value = null
-        // Clear badges from service state so dialog doesn't reappear on recompose
+        timerService?.clearNewlyAwardedBadges()
         _timerState.value = _timerState.value.copy(newlyAwardedBadges = emptyList())
     }
 
     fun onModeSelected(mode: SessionMode) {
         _selectedMode.value = mode
+        _customDurationSeconds.value = mode.defaultDurationSeconds
     }
 
-    fun onCustomDurationChanged(minutes: Int) {
-        _customDurationMinutes.value = minutes.coerceIn(5, 180)
+    fun onCustomDurationSecondsChanged(seconds: Int) {
+        _customDurationSeconds.value = seconds.coerceIn(
+            _selectedMode.value.minSeconds,
+            _selectedMode.value.maxSeconds,
+        )
     }
 
     fun onTagChanged(tag: String) {
         _customTag.value = tag
     }
 
-    private suspend fun buildSessionConfig(): SessionConfig =
+    fun onStrictnessSelected(strictness: FocusStrictness) {
+        _selectedStrictness.value = strictness
+    }
+
+    private fun buildSessionConfig(): SessionConfig =
         buildSessionConfigUseCase(
             mode = _selectedMode.value,
-            customDurationMinutes = _customDurationMinutes.value,
+            durationSeconds = _customDurationSeconds.value,
             tag = _customTag.value.trim().ifEmpty { null },
+            strictness = _selectedStrictness.value,
         )
 
     private fun triggerDistractionWarning() {
@@ -178,4 +188,23 @@ class TimerViewModel @Inject constructor(
         unbindService()
         super.onCleared()
     }
+}
+
+// Mode-specific picker bounds and defaults used by TimerScreen and TimerWheelPicker
+val SessionMode.minSeconds: Int get() = when (this) {
+    SessionMode.POMODORO -> 300       // 5 min
+    SessionMode.DEEP_WORK -> 1800     // 30 min
+    SessionMode.CUSTOM, SessionMode.STUDY -> 300  // 5 min
+}
+
+val SessionMode.maxSeconds: Int get() = when (this) {
+    SessionMode.POMODORO -> 5400      // 90 min
+    SessionMode.DEEP_WORK -> 10800    // 3 h
+    SessionMode.CUSTOM, SessionMode.STUDY -> 10800
+}
+
+val SessionMode.defaultDurationSeconds: Int get() = when (this) {
+    SessionMode.POMODORO -> 1500      // 25 min
+    SessionMode.DEEP_WORK -> 5400     // 90 min
+    SessionMode.CUSTOM, SessionMode.STUDY -> 1500
 }

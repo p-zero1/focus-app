@@ -9,12 +9,13 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import com.focusapp.domain.model.DailyFocusSummary
 import com.focusapp.domain.model.FocusSession
 import com.focusapp.domain.model.TagAggregate
 
 class StartSessionUseCaseTest {
 
-    private val fakeRepo = FakeSessionRepository()
+    private val fakeRepo = FakeStartSessionRepo()
     private val useCase = StartSessionUseCase(fakeRepo)
 
     @Test
@@ -45,7 +46,7 @@ class StartSessionUseCaseTest {
 
 // ---- Minimal fake — no mocking framework needed (Constitution Principle VI) ----
 
-private class FakeSessionRepository : SessionRepository {
+private class FakeStartSessionRepo : SessionRepository {
 
     val insertedSessions = mutableListOf<Pair<Long, SessionConfig>>()
     private var idCounter = 1L
@@ -60,8 +61,12 @@ private class FakeSessionRepository : SessionRepository {
     override fun getAllSessions(): Flow<List<FocusSession>> = flowOf(emptyList())
     override fun getSessionsByDateRange(startMs: Long, endMs: Long, isPremium: Boolean): Flow<List<FocusSession>> = flowOf(emptyList())
     override fun getSessionsByTag(tag: String): Flow<List<FocusSession>> = flowOf(emptyList())
+    override fun getTagAggregates(): Flow<List<TagAggregate>> = flowOf(emptyList())
     override suspend fun getCompletedCountSince(sinceMs: Long): Int = 0
     override suspend fun getTotalCompletedCount(): Int = 0
     override suspend fun getActiveSession(): FocusSession? = null
     override suspend fun deleteSession(id: Long) {}
+    override fun getWeeklySessions(weekStartMs: Long, weekEndMs: Long): Flow<List<DailyFocusSummary>> = flowOf(emptyList())
+    override suspend fun getDailyFocusMinutes(date: String): DailyFocusSummary? = null
+    override suspend fun getSessionCountSince(sinceMs: Long): Int = 0
 }

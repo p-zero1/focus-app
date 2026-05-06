@@ -34,29 +34,29 @@ class AppPreferences @Inject constructor(private val context: Context) : FocusPr
 
     // ---- Reads ----
 
-    val pomodoroFocusMinutes: Flow<Int> = context.dataStore.data
+    override val pomodoroFocusMinutes: Flow<Int> = context.dataStore.data
         .map { it[Keys.POMODORO_FOCUS_MINUTES] ?: 25 }
 
-    val pomodoroShortBreakMinutes: Flow<Int> = context.dataStore.data
+    override val pomodoroShortBreakMinutes: Flow<Int> = context.dataStore.data
         .map { it[Keys.POMODORO_SHORT_BREAK_MINUTES] ?: 5 }
 
-    val pomodoroLongBreakMinutes: Flow<Int> = context.dataStore.data
+    override val pomodoroLongBreakMinutes: Flow<Int> = context.dataStore.data
         .map { it[Keys.POMODORO_LONG_BREAK_MINUTES] ?: 15 }
 
-    val pomodoroIntervalsBeforeLong: Flow<Int> = context.dataStore.data
+    override val pomodoroIntervalsBeforeLong: Flow<Int> = context.dataStore.data
         .map { it[Keys.POMODORO_INTERVALS_BEFORE_LONG] ?: 4 }
 
-    val usageStatsPermissionAsked: Flow<Boolean> = context.dataStore.data
+    override val usageStatsPermissionAsked: Flow<Boolean> = context.dataStore.data
         .map { it[Keys.USAGE_STATS_PERMISSION_ASKED] ?: false }
 
-    val notificationPermissionAsked: Flow<Boolean> = context.dataStore.data
+    override val notificationPermissionAsked: Flow<Boolean> = context.dataStore.data
         .map { it[Keys.NOTIFICATION_PERMISSION_ASKED] ?: false }
 
-    val onboardingComplete: Flow<Boolean> = context.dataStore.data
+    override val onboardingComplete: Flow<Boolean> = context.dataStore.data
         .map { it[Keys.ONBOARDING_COMPLETE] ?: false }
 
     /** Theme name: DEFAULT | DARK | AMOLED */
-    val theme: Flow<String> = context.dataStore.data
+    override val theme: Flow<String> = context.dataStore.data
         .map { it[Keys.THEME] ?: "DEFAULT" }
 
     // ---- Writes ----

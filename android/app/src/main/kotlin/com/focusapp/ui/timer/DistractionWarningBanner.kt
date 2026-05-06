@@ -35,6 +35,7 @@ fun DistractionWarningBanner(
     visible: Boolean,
     onDismiss: () -> Unit,
     awaySeconds: Int = 0,
+    appName: String? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -62,10 +63,10 @@ fun DistractionWarningBanner(
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                val bannerText = if (awaySeconds > 0) {
-                    "You were away for ${awaySeconds}s — stay on track!"
-                } else {
-                    "You broke focus! Stay on track \uD83D\uDCAA"
+                val bannerText = when {
+                    appName != null -> "Switched to $appName — stay focused!"
+                    awaySeconds > 0 -> "You were away for ${awaySeconds}s — stay on track!"
+                    else -> "You broke focus! Stay on track \uD83D\uDCAA"
                 }
                 Text(
                     text = bannerText,

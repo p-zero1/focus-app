@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "focus_sessions",
-    indices = [Index(value = ["start_time"])]
+    indices = [Index(value = ["start_time"]), Index(value = ["tag"])]
 )
 data class FocusSessionEntity(
     @PrimaryKey(autoGenerate = true)
@@ -52,4 +52,12 @@ data class FocusSessionEntity(
     /** Computed at session end: 0–100 */
     @ColumnInfo(name = "focus_score")
     val focusScore: Int?,
+
+    /** FocusStrictness enum name: RELAXED | STRICT | HARDCORE */
+    @ColumnInfo(name = "focus_strictness", defaultValue = "RELAXED")
+    val focusStrictness: String = "RELAXED",
+
+    /** SessionOutcome enum name: CLEAN | INTERRUPTED | FAILED — null until session completes */
+    @ColumnInfo(name = "session_outcome")
+    val sessionOutcome: String? = null,
 )

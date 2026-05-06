@@ -72,7 +72,7 @@ private fun BarColumn(
         verticalArrangement = Arrangement.Bottom,
         modifier = Modifier
             .width(BAR_WIDTH)
-            .height(MAX_BAR_HEIGHT + 28.dp)
+            .height(MAX_BAR_HEIGHT + 48.dp)
             .semantics { contentDescription = "${summary.totalMinutes} min on ${summary.date}" }
             .clickable(onClick = onClick),
     ) {

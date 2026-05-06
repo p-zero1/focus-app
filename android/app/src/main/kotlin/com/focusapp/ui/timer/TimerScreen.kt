@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -28,21 +29,26 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.focusapp.domain.model.FocusStrictness
 import com.focusapp.domain.model.SessionMode
+import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.TimerStatus
 import com.focusapp.ui.profile.BadgeAwardedDialog
 
@@ -54,35 +60,29 @@ fun TimerScreen(
 ) {
     val timerState by viewModel.timerState.collectAsState()
     val selectedMode by viewModel.selectedMode.collectAsState()
-    val customDuration by viewModel.customDurationMinutes.collectAsState()
+    val selectedStrictness by viewModel.selectedStrictness.collectAsState()
+    val customDurationSeconds by viewModel.customDurationSeconds.collectAsState()
     val customTag by viewModel.customTag.collectAsState()
     val showBreakPrompt by viewModel.showBreakPrompt.collectAsState()
     val showDistractionWarning by viewModel.showDistractionWarning.collectAsState()
     val distractionAwaySeconds by viewModel.distractionAwaySeconds.collectAsState()
+    val distractionAppName by viewModel.distractionAppName.collectAsState()
     val newBadge by viewModel.newBadge.collectAsState()
 
-    // Bind / unbind service with the composable lifecycle
     DisposableEffect(Unit) {
         viewModel.bindService()
         onDispose { viewModel.unbindService() }
     }
 
-    // Badge celebration dialog — shown when a new badge is awarded after session completion
     newBadge?.let { badge ->
         BadgeAwardedDialog(badge = badge, onDismiss = viewModel::onDismissBadge)
     }
 
-    // Navigate to session detail when a session just finished.
-    // Capture the ID before onDismissBreakPrompt() resets timerState to IDLE
-    // (currentSessionId would be null after the reset — C1 crash fix).
     val finishedSessionId = timerState.currentSessionId
     if (showBreakPrompt && finishedSessionId != null) {
         BreakPromptDialog(
-            sessionId = finishedSessionId,
-            onStartBreak = {
-                viewModel.onDismissBreakPrompt()
-                onSessionCompleted(finishedSessionId)
-            },
+            outcome = timerState.sessionOutcome,
+            onStartBreak = { viewModel.onStartBreak() },
             onSkip = {
                 viewModel.onDismissBreakPrompt()
                 onSessionCompleted(finishedSessionId)
@@ -100,21 +100,19 @@ fun TimerScreen(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        // ---- Distraction warning banner (slides in from top) ----
         DistractionWarningBanner(
             visible = showDistractionWarning,
             onDismiss = viewModel::onDismissDistractionWarning,
             awaySeconds = distractionAwaySeconds,
+            appName = distractionAppName,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // ---- Circular countdown ----
         CountdownDisplay(
             timerState = timerState,
             modifier = Modifier.size(220.dp),
         )
 
-        // ---- Distraction badge (shown when distractions > 0 during active session) ----
         AnimatedVisibility(
             visible = timerState.distractionCount > 0,
             enter = fadeIn(),
@@ -138,7 +136,7 @@ fun TimerScreen(
             }
         }
 
-        // ---- Mode selector (only when idle) ----
+        // Mode selector + duration picker — only while idle
         AnimatedVisibility(visible = timerState.status == TimerStatus.IDLE) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 ModeSelector(
@@ -147,20 +145,53 @@ fun TimerScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                StrictnessSelector(
+                    selected = selectedStrictness,
+                    onSelected = viewModel::onStrictnessSelected,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = selectedMode.pickerLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // key(selectedMode) resets the LazyListState when mode changes, snapping back to default
+                key(selectedMode) {
+                    TimerWheelPicker(
+                        durationSeconds = customDurationSeconds,
+                        minSeconds = selectedMode.minSeconds,
+                        maxSeconds = selectedMode.maxSeconds,
+                        onDurationChanged = viewModel::onCustomDurationSecondsChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                // Tag field only for CUSTOM and STUDY
                 if (selectedMode == SessionMode.CUSTOM || selectedMode == SessionMode.STUDY) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    CustomDurationPicker(
-                        durationMinutes = customDuration,
-                        tag = customTag,
-                        mode = selectedMode,
-                        onDurationChanged = viewModel::onCustomDurationChanged,
-                        onTagChanged = viewModel::onTagChanged,
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = customTag,
+                        onValueChange = viewModel::onTagChanged,
+                        label = { Text("Tag (optional)") },
+                        placeholder = { Text("e.g. DSA, Project X") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
                     )
                 }
             }
         }
 
-        // ---- Controls ----
         TimerControls(
             status = timerState.status,
             onStart = viewModel::onStartSession,
@@ -217,6 +248,14 @@ private val TimerStatus.displayName: String
         TimerStatus.PAUSED -> "Paused"
         TimerStatus.BREAK -> "Break"
         TimerStatus.FINISHED -> "Done!"
+    }
+
+private val SessionMode.pickerLabel: String
+    get() = when (this) {
+        SessionMode.POMODORO -> "Focus interval (5 – 90 min)"
+        SessionMode.DEEP_WORK -> "Deep work duration (30 min – 3 h)"
+        SessionMode.CUSTOM -> "Session duration"
+        SessionMode.STUDY -> "Study duration"
     }
 
 // ---- Controls row ----
@@ -295,18 +334,81 @@ private fun TimerControls(
     }
 }
 
-// ---- Break prompt dialog (T036) ----
+// ---- Strictness selector ----
+
+@Composable
+private fun StrictnessSelector(
+    selected: FocusStrictness,
+    onSelected: (FocusStrictness) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Focus mode",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FocusStrictness.entries.forEach { strictness ->
+                androidx.compose.material3.FilterChip(
+                    selected = strictness == selected,
+                    onClick = { onSelected(strictness) },
+                    label = { Text(strictness.label, maxLines = 1) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Text(
+            text = selected.description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+private val FocusStrictness.label: String
+    get() = when (this) {
+        FocusStrictness.RELAXED  -> "Relaxed"
+        FocusStrictness.STRICT   -> "Strict"
+        FocusStrictness.HARDCORE -> "Hardcore"
+    }
+
+private val FocusStrictness.description: String
+    get() = when (this) {
+        FocusStrictness.RELAXED  -> "Distractions are logged only"
+        FocusStrictness.STRICT   -> "Session pauses on distraction"
+        FocusStrictness.HARDCORE -> "Session ends on first distraction"
+    }
+
+// ---- Break prompt dialog ----
 
 @Composable
 private fun BreakPromptDialog(
-    sessionId: Long,
+    outcome: SessionOutcome?,
     onStartBreak: () -> Unit,
     onSkip: () -> Unit,
 ) {
+    val title = when (outcome) {
+        SessionOutcome.CLEAN       -> "Clean session! 🎯"
+        SessionOutcome.INTERRUPTED -> "Session complete"
+        SessionOutcome.FAILED      -> "Session complete"
+        null                       -> "Session Complete!"
+    }
+    val message = when (outcome) {
+        SessionOutcome.CLEAN       -> "No distractions — excellent focus! Take a break to recharge."
+        SessionOutcome.INTERRUPTED -> "You had a few distractions. Take a break and aim for clean next time!"
+        SessionOutcome.FAILED      -> "Lots of distractions this time. Rest up and try again!"
+        null                       -> "Great work! Take a short break to recharge before your next session."
+    }
     AlertDialog(
         onDismissRequest = onSkip,
-        title = { Text("Session Complete!") },
-        text = { Text("Great work! Take a short break to recharge before your next session.") },
+        title = { Text(title) },
+        text = { Text(message) },
         confirmButton = {
             Button(onClick = onStartBreak) { Text("Take a Break") }
         },

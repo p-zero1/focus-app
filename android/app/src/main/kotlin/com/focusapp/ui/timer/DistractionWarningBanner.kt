@@ -5,30 +5,34 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+private val bannerShape        = RoundedCornerShape(12.dp)
+private val bannerBg           = Color(0xB38F2A2A)   // dark-red glass, 70% opacity
+private val bannerBorder       = Color(0x40FF6B6B)   // red border, 25% opacity
+private val bannerIconTint     = Color(0xFFFF6B6B)
+private val bannerTextColor    = Color(0xFFFFC8C8)
+
 /**
- * Slide-in banner shown at the top of the timer screen when a distraction is detected.
- * Auto-dismissed by [TimerViewModel] after 4 seconds; also dismisses on tap.
- *
- * [awaySeconds] > 0 means a UserReturned event fired and we can show how long they were away.
+ * Slide-in banner shown when a distraction is detected.
+ * Uses glass-morphism red card to match the design system.
  */
 @Composable
 fun DistractionWarningBanner(
@@ -40,17 +44,16 @@ fun DistractionWarningBanner(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter   = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+        exit    = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         modifier = modifier,
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onDismiss),
+        Surface(
+            onClick         = onDismiss,
+            color           = bannerBg,
+            shape           = bannerShape,
+            border          = BorderStroke(1.dp, bannerBorder),
+            modifier        = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -58,20 +61,19 @@ fun DistractionWarningBanner(
                 horizontalArrangement = Arrangement.Start,
             ) {
                 Icon(
-                    imageVector = Icons.Default.Warning,
+                    imageVector    = Icons.Default.Warning,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    tint           = bannerIconTint,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                val bannerText = when {
-                    appName != null -> "Switched to $appName — stay focused!"
-                    awaySeconds > 0 -> "You were away for ${awaySeconds}s — stay on track!"
-                    else -> "You broke focus! Stay on track \uD83D\uDCAA"
+                val text = when {
+                    appName != null  -> "Switched to $appName — stay focused!"
+                    awaySeconds > 0  -> "You were away for ${awaySeconds}s — stay on track!"
+                    else             -> "You broke focus! Stay on track 💪"
                 }
                 Text(
-                    text = bannerText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    text     = text,
+                    color    = bannerTextColor,
                     modifier = Modifier.weight(1f),
                 )
             }

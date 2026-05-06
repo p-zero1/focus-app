@@ -3,6 +3,8 @@ package com.focusapp.ui.timer
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,11 +28,10 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,8 +42,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -58,16 +65,16 @@ fun TimerScreen(
     modifier: Modifier = Modifier,
     viewModel: TimerViewModel = hiltViewModel(),
 ) {
-    val timerState by viewModel.timerState.collectAsState()
-    val selectedMode by viewModel.selectedMode.collectAsState()
-    val selectedStrictness by viewModel.selectedStrictness.collectAsState()
+    val timerState           by viewModel.timerState.collectAsState()
+    val selectedMode         by viewModel.selectedMode.collectAsState()
+    val selectedStrictness   by viewModel.selectedStrictness.collectAsState()
     val customDurationSeconds by viewModel.customDurationSeconds.collectAsState()
-    val customTag by viewModel.customTag.collectAsState()
-    val showBreakPrompt by viewModel.showBreakPrompt.collectAsState()
+    val customTag            by viewModel.customTag.collectAsState()
+    val showBreakPrompt      by viewModel.showBreakPrompt.collectAsState()
     val showDistractionWarning by viewModel.showDistractionWarning.collectAsState()
     val distractionAwaySeconds by viewModel.distractionAwaySeconds.collectAsState()
-    val distractionAppName by viewModel.distractionAppName.collectAsState()
-    val newBadge by viewModel.newBadge.collectAsState()
+    val distractionAppName   by viewModel.distractionAppName.collectAsState()
+    val newBadge             by viewModel.newBadge.collectAsState()
 
     DisposableEffect(Unit) {
         viewModel.bindService()
@@ -81,9 +88,9 @@ fun TimerScreen(
     val finishedSessionId = timerState.currentSessionId
     if (showBreakPrompt && finishedSessionId != null) {
         BreakPromptDialog(
-            outcome = timerState.sessionOutcome,
+            outcome      = timerState.sessionOutcome,
             onStartBreak = { viewModel.onStartBreak() },
-            onSkip = {
+            onSkip       = {
                 viewModel.onDismissBreakPrompt()
                 onSessionCompleted(finishedSessionId)
             },
@@ -94,32 +101,60 @@ fun TimerScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         DistractionWarningBanner(
-            visible = showDistractionWarning,
-            onDismiss = viewModel::onDismissDistractionWarning,
+            visible    = showDistractionWarning,
+            onDismiss  = viewModel::onDismissDistractionWarning,
             awaySeconds = distractionAwaySeconds,
-            appName = distractionAppName,
-            modifier = Modifier.fillMaxWidth(),
+            appName    = distractionAppName,
+            modifier   = Modifier.fillMaxWidth(),
         )
 
-        CountdownDisplay(
-            timerState = timerState,
+        // Orb + countdown overlay
+        Box(
             modifier = Modifier.size(220.dp),
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            FocusOrb(
+                timerStatus   = timerState.status,
+                isDistracting = showDistractionWarning,
+                modifier      = Modifier.fillMaxSize(),
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text  = formatSeconds(timerState.remainingSeconds),
+                    style = TextStyle(
+                        fontSize           = 42.sp,
+                        fontWeight         = FontWeight.Bold,
+                        fontFeatureSettings = "tnum",
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Remaining time: ${formatSeconds(timerState.remainingSeconds)}"
+                    },
+                )
+                Text(
+                    text  = timerState.status.displayName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.65f),
+                )
+            }
+        }
 
         AnimatedVisibility(
             visible = timerState.distractionCount > 0,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter   = fadeIn(),
+            exit    = fadeOut(),
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment   = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Icon(
@@ -129,62 +164,60 @@ fun TimerScreen(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${timerState.distractionCount} distraction${if (timerState.distractionCount != 1) "s" else ""}",
+                    text  = "${timerState.distractionCount} distraction${if (timerState.distractionCount != 1) "s" else ""}",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
         }
 
-        // Mode selector + duration picker — only while idle
         AnimatedVisibility(visible = timerState.status == TimerStatus.IDLE) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 ModeSelector(
-                    selectedMode = selectedMode,
+                    selectedMode   = selectedMode,
                     onModeSelected = viewModel::onModeSelected,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier       = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 StrictnessSelector(
-                    selected = selectedStrictness,
+                    selected   = selectedStrictness,
                     onSelected = viewModel::onStrictnessSelected,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier   = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = selectedMode.pickerLabel,
+                    text  = selectedMode.pickerLabel,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // key(selectedMode) resets the LazyListState when mode changes, snapping back to default
+                // key(selectedMode) resets LazyListState when mode changes
                 key(selectedMode) {
                     TimerWheelPicker(
-                        durationSeconds = customDurationSeconds,
-                        minSeconds = selectedMode.minSeconds,
-                        maxSeconds = selectedMode.maxSeconds,
+                        durationSeconds   = customDurationSeconds,
+                        minSeconds        = selectedMode.minSeconds,
+                        maxSeconds        = selectedMode.maxSeconds,
                         onDurationChanged = viewModel::onCustomDurationSecondsChanged,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier          = Modifier.fillMaxWidth(),
                     )
                 }
 
-                // Tag field only for CUSTOM and STUDY
                 if (selectedMode == SessionMode.CUSTOM || selectedMode == SessionMode.STUDY) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = customTag,
-                        onValueChange = viewModel::onTagChanged,
-                        label = { Text("Tag (optional)") },
-                        placeholder = { Text("e.g. DSA, Project X") },
-                        singleLine = true,
+                        value          = customTag,
+                        onValueChange  = viewModel::onTagChanged,
+                        label          = { Text("Tag (optional)") },
+                        placeholder    = { Text("e.g. DSA, Project X") },
+                        singleLine     = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        modifier = Modifier
+                        modifier       = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 4.dp),
                     )
@@ -193,72 +226,41 @@ fun TimerScreen(
         }
 
         TimerControls(
-            status = timerState.status,
-            onStart = viewModel::onStartSession,
-            onPause = viewModel::onPause,
-            onResume = viewModel::onResume,
-            onStop = viewModel::onStop,
+            status    = timerState.status,
+            onStart   = viewModel::onStartSession,
+            onPause   = viewModel::onPause,
+            onResume  = viewModel::onResume,
+            onStop    = viewModel::onStop,
             onSkipBreak = viewModel::onSkipBreak,
         )
     }
 }
 
-// ---- Circular countdown composable ----
-
-@Composable
-private fun CountdownDisplay(
-    timerState: com.focusapp.domain.model.TimerState,
-    modifier: Modifier = Modifier,
-) {
-    val progress = if (timerState.remainingSeconds > 0 && timerState.status != TimerStatus.IDLE) {
-        val total = timerState.remainingSeconds + timerState.elapsedSeconds
-        if (total > 0) timerState.remainingSeconds.toFloat() / total else 1f
-    } else {
-        1f
-    }
-
-    Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        CircularProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            strokeWidth = 8.dp,
-        )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = formatSeconds(timerState.remainingSeconds),
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.semantics {
-                    contentDescription = "Remaining time: ${formatSeconds(timerState.remainingSeconds)}"
-                },
-            )
-            Text(
-                text = timerState.status.displayName,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
 private val TimerStatus.displayName: String
     get() = when (this) {
-        TimerStatus.IDLE -> "Ready"
-        TimerStatus.ACTIVE -> "Focusing"
-        TimerStatus.PAUSED -> "Paused"
-        TimerStatus.BREAK -> "Break"
+        TimerStatus.IDLE     -> "Ready"
+        TimerStatus.ACTIVE   -> "Focusing"
+        TimerStatus.PAUSED   -> "Paused"
+        TimerStatus.BREAK    -> "Break"
         TimerStatus.FINISHED -> "Done!"
     }
 
 private val SessionMode.pickerLabel: String
     get() = when (this) {
-        SessionMode.POMODORO -> "Focus interval (5 – 90 min)"
+        SessionMode.POMODORO  -> "Focus interval (5 – 90 min)"
         SessionMode.DEEP_WORK -> "Deep work duration (30 min – 3 h)"
-        SessionMode.CUSTOM -> "Session duration"
-        SessionMode.STUDY -> "Study duration"
+        SessionMode.CUSTOM    -> "Session duration"
+        SessionMode.STUDY     -> "Study duration"
     }
 
-// ---- Controls row ----
+// ---- Controls ----
+
+private val startGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFF837BFF), Color(0xFF6C63FF), Color(0xFF5A52E0)),
+)
+private val stopGradient = Brush.linearGradient(
+    colors = listOf(Color(0xFFFF6B6B), Color(0xFFCC3333)),
+)
 
 @Composable
 private fun TimerControls(
@@ -277,61 +279,115 @@ private fun TimerControls(
     ) {
         when (status) {
             TimerStatus.IDLE, TimerStatus.FINISHED -> {
-                Button(
-                    onClick = onStart,
-                    modifier = Modifier.semantics { contentDescription = "Start session" },
+                GradientPillButton(
+                    gradient = startGradient,
+                    onClick  = onStart,
+                    label    = "Start session",
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Start")
+                    Icon(Icons.Default.PlayArrow, null, tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Start", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
             TimerStatus.ACTIVE -> {
-                FilledTonalButton(
-                    onClick = onPause,
-                    modifier = Modifier.semantics { contentDescription = "Pause session" },
-                ) {
-                    Icon(Icons.Default.Pause, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Pause")
-                }
-                OutlinedButton(
-                    onClick = onStop,
-                    modifier = Modifier.semantics { contentDescription = "Stop session" },
-                ) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Stop")
-                }
+                // Pause — 52 dp circle
+                CircleIconButton(
+                    onClick  = onPause,
+                    label    = "Pause session",
+                    tint     = Color.White,
+                    bg       = Color(0xFF23233D),
+                ) { Icon(Icons.Default.Pause, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
+                // Stop — 52 dp circle, red gradient
+                GradientCircleButton(
+                    gradient = stopGradient,
+                    onClick  = onStop,
+                    label    = "Stop session",
+                ) { Icon(Icons.Default.Stop, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
             TimerStatus.PAUSED -> {
-                Button(
-                    onClick = onResume,
-                    modifier = Modifier.semantics { contentDescription = "Resume session" },
+                GradientPillButton(
+                    gradient = startGradient,
+                    onClick  = onResume,
+                    label    = "Resume session",
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Resume")
+                    Icon(Icons.Default.PlayArrow, null, tint = Color.White)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Resume", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
-                OutlinedButton(
-                    onClick = onStop,
-                    modifier = Modifier.semantics { contentDescription = "Stop session" },
-                ) {
-                    Icon(Icons.Default.Stop, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Stop")
-                }
+                GradientCircleButton(
+                    gradient = stopGradient,
+                    onClick  = onStop,
+                    label    = "Stop session",
+                ) { Icon(Icons.Default.Stop, null, tint = Color.White, modifier = Modifier.size(22.dp)) }
             }
             TimerStatus.BREAK -> {
-                OutlinedButton(
-                    onClick = onSkipBreak,
-                    modifier = Modifier.semantics { contentDescription = "Skip break" },
+                GradientPillButton(
+                    gradient = startGradient,
+                    onClick  = onSkipBreak,
+                    label    = "Skip break",
                 ) {
-                    Text("Skip Break")
+                    Text("Skip Break", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun GradientPillButton(
+    gradient: Brush,
+    onClick: () -> Unit,
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50.dp))
+            .background(gradient)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = label }
+            .padding(horizontal = 32.dp, vertical = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) { content() }
+    }
+}
+
+@Composable
+private fun CircleIconButton(
+    onClick: () -> Unit,
+    label: String,
+    tint: Color,
+    bg: Color,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .background(bg)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+@Composable
+private fun GradientCircleButton(
+    gradient: Brush,
+    onClick: () -> Unit,
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .background(gradient)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) { content() }
 }
 
 // ---- Strictness selector ----
@@ -344,7 +400,7 @@ private fun StrictnessSelector(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Focus mode",
+            text  = "Focus mode",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -354,16 +410,21 @@ private fun StrictnessSelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             FocusStrictness.entries.forEach { strictness ->
-                androidx.compose.material3.FilterChip(
-                    selected = strictness == selected,
-                    onClick = { onSelected(strictness) },
-                    label = { Text(strictness.label, maxLines = 1) },
-                    modifier = Modifier.weight(1f),
+                FilterChip(
+                    selected  = strictness == selected,
+                    onClick   = { onSelected(strictness) },
+                    label     = { Text(strictness.label, maxLines = 1) },
+                    colors    = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor      = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor          = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor    = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                    modifier  = Modifier.weight(1f),
                 )
             }
         }
         Text(
-            text = selected.description,
+            text  = selected.description,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp),
@@ -407,18 +468,14 @@ private fun BreakPromptDialog(
     }
     AlertDialog(
         onDismissRequest = onSkip,
-        title = { Text(title) },
-        text = { Text(message) },
-        confirmButton = {
-            Button(onClick = onStartBreak) { Text("Take a Break") }
-        },
-        dismissButton = {
-            TextButton(onClick = onSkip) { Text("Skip Break") }
-        },
+        title   = { Text(title) },
+        text    = { Text(message) },
+        confirmButton = { Button(onClick = onStartBreak) { Text("Take a Break") } },
+        dismissButton = { TextButton(onClick = onSkip) { Text("Skip Break") } },
     )
 }
 
-private fun formatSeconds(totalSeconds: Int): String {
+internal fun formatSeconds(totalSeconds: Int): String {
     val m = totalSeconds / 60
     val s = totalSeconds % 60
     return "%02d:%02d".format(m, s)

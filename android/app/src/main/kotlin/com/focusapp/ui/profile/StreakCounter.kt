@@ -15,16 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * Displays the current streak as a large flame emoji + number.
- * Colour shifts to orange at 7-day milestone (vs default onSurface).
- */
 @Composable
 fun StreakCounter(
     streak: Int,
     modifier: Modifier = Modifier,
 ) {
-    val streakColor = if (streak >= 7) Color(0xFFFF6D00) else MaterialTheme.colorScheme.onSurface
+    val streakColor = if (streak >= 7) Color(0xFFFFB347) else MaterialTheme.colorScheme.onSurface
 
     Column(
         modifier = modifier.semantics {
@@ -33,19 +29,19 @@ fun StreakCounter(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "\uD83D\uDD25",  // 🔥
-            fontSize = 48.sp,
+            text     = "🔥",  // 🔥
+            fontSize = 56.sp,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "$streak",
-            fontSize = 36.sp,
+            text       = "$streak",
+            fontSize   = 48.sp,
             fontWeight = FontWeight.Bold,
-            color = streakColor,
+            color      = streakColor,
         )
         Text(
-            text = if (streak == 1) "day streak" else "day streak",
-            style = MaterialTheme.typography.labelMedium,
+            text  = "day streak",
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

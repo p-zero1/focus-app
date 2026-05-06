@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -90,8 +92,13 @@ private fun BarColumn(
                 .height(barHeight)
                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
                 .background(
-                    if (summary.totalMinutes > 0) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
+                    if (summary.totalMinutes > 0)
+                        Brush.verticalGradient(listOf(Color(0xFF837BFF), Color(0xFF6C63FF)))
+                    else
+                        Brush.verticalGradient(listOf(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.surfaceVariant,
+                        ))
                 ),
         )
         Spacer(modifier = Modifier.height(4.dp))

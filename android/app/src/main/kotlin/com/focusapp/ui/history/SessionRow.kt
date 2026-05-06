@@ -27,6 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -56,23 +58,23 @@ fun SessionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Mode icon — 38 dp square card
+        // Mode icon — 38 dp square card (F07: purple-tinted bg + icon)
         Box(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .background(Color(0x1A6C63FF)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector    = session.mode.icon,
                 contentDescription = session.mode.displayName,
                 modifier       = Modifier.size(20.dp),
-                tint           = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint           = Color(0xFFB5AFFF),
             )
         }
 
-        // Main content
+        // Main content (F06: date moves here below mode name)
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -85,15 +87,15 @@ fun SessionRow(
                     text  = session.mode.displayName,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                // Tag badge pill
+                // Tag badge pill (F08: purple-tinted chip)
                 session.tag?.let { tag ->
                     Text(
                         text  = tag,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = Color(0xFFB5AFFF),
                         modifier = Modifier
                             .clip(tagShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .background(Color(0x1A6C63FF))
                             .padding(horizontal = 8.dp, vertical = 2.dp),
                     )
                 }
@@ -103,7 +105,7 @@ fun SessionRow(
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
                 Text(
-                    text  = formatDuration(session.actualDuration),
+                    text  = formatDate(session.startTime),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -128,11 +130,12 @@ fun SessionRow(
             }
         }
 
-        // Date
+        // Duration on right (F06: bold, prominent)
         Text(
-            text  = formatDate(session.startTime),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text       = formatDuration(session.actualDuration),
+            style      = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color      = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

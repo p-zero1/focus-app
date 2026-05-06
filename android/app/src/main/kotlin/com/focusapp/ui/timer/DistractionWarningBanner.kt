@@ -24,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-private val bannerShape        = RoundedCornerShape(12.dp)
-private val bannerBg           = Color(0xB38F2A2A)   // dark-red glass, 70% opacity
+private val bannerShape        = RoundedCornerShape(16.dp)
+private val bannerBg           = Color(0x2EFF6B6B)   // translucent red glass ~18% opacity
 private val bannerBorder       = Color(0x40FF6B6B)   // red border, 25% opacity
 private val bannerIconTint     = Color(0xFFFF6B6B)
 private val bannerTextColor    = Color(0xFFFFC8C8)

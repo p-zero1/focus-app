@@ -125,8 +125,8 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 
 - **FR-001**: System MUST support Pomodoro mode with a default 25-minute focus interval and 5-minute short break, with a 15-minute long break after 4 pomodoros.
 - **FR-002**: System MUST allow users to configure custom session durations from 5 minutes to 180 minutes.
-- **FR-003**: System MUST suppress non-critical device notifications during an active Deep Work session (where platform permissions allow).
-- **FR-004**: System MUST automatically log each completed focus session with start time, end time, duration, mode, and tag.
+- **FR-003**: System MUST suppress non-critical device notifications during an active Deep Work session (where platform permissions allow). *(Non-critical = all notifications except phone calls and alarms; suppressed via `NotificationManager.setInterruptionFilter(INTERRUPTION_FILTER_ALARMS)` when `ACCESS_NOTIFICATION_POLICY` is granted.)*
+- **FR-004**: System MUST automatically log each completed focus session with start time, end time, duration, mode, and tag. *(The tag field is `null` for modes that do not expose a tag input in the UI; see FR-020 for which modes support tagging.)*
 - **FR-005**: System MUST allow users to manually end a session early; partial sessions are logged with their actual duration.
 - **FR-006**: System MUST display a break prompt with an option to accept or skip after each focus interval.
 
@@ -154,7 +154,7 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 
 **Study/Coding Mode**
 
-- **FR-020**: System MUST provide a Study Mode with an optional countdown target and optional session tagging (tag field shown; not required to start).
+- **FR-020**: System MUST provide a Study Mode with an optional countdown target and optional session tagging. The tag input field is shown for **CUSTOM and STUDY modes only**; Pomodoro and Deep Work sessions are not taggable via the UI (tag stored as `null` for those modes). Tag entry is always optional — it is not required to start a session.
 - **FR-021**: System MUST allow users to filter session history by tag and view aggregated time per tag.
 - **FR-022**: System MUST fire an alarm-style notification when a Study Mode countdown reaches zero, even when the app is backgrounded.
 

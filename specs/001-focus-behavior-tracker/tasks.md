@@ -76,7 +76,7 @@
 - [x] T032 [US1] Create `TimerViewModel.kt` in `ui/timer/TimerViewModel.kt`: binds to `TimerService`, exposes `timerState` and `currentSession` to UI, delegates start/pause/resume/end to service
 - [x] T033 [US1] Create `TimerScreen.kt` Compose screen in `ui/timer/TimerScreen.kt`: shows circular countdown display, mode selector chips (Pomodoro / Custom / Study / Deep Work), Start / Pause / Stop buttons; reads state from `TimerViewModel`
 - [x] T034 [US1] Create `ModeSelector.kt` Compose component in `ui/timer/ModeSelector.kt`: row of selectable mode chips; updates `TimerViewModel` with selected mode
-- [x] T035 [US1] Create `CustomDurationPicker.kt` Compose component in `ui/timer/CustomDurationPicker.kt`: number input or slider for custom session duration; shown only in CUSTOM/STUDY mode
+- [x] T035 [US1] Create `CustomDurationPicker.kt` Compose component in `ui/timer/CustomDurationPicker.kt`: number input or slider for custom session duration; shown only in CUSTOM/STUDY mode *(superseded by T-P4a — `CustomDurationPicker.kt` is dead code, replaced by `TimerWheelPicker.kt`; see T-P5 for cleanup)*
 - [x] T036 [US1] Add break prompt dialog to `TimerScreen.kt`: shown when `timerState.status == FINISHED`; offers "Start Break" or "Skip" actions; navigates to `session_detail/{id}` after dismissal
 
 - [x] T027-G1 [US1] Add unit test `StartSessionUseCaseTest.kt` in `test/.../usecase/StartSessionUseCaseTest.kt`: verifies session ID returned, config fields passed through, tag preserved *(Constitution Principle V — gap fix)*
@@ -94,7 +94,7 @@
 
 ### Implementation for User Story 2
 
-- [x] T037 Create `DistractionMonitor.kt` in `service/DistractionMonitor.kt`: polls `UsageStatsManager.queryEvents()` every 4 seconds via a coroutine loop; emits `DistractionDetected`, `UserReturned` events to a `SharedFlow`; tracks which package is in foreground
+- [x] T037 Create `DistractionMonitor.kt` in `service/DistractionMonitor.kt`: polls `UsageStatsManager.queryEvents()` every 2 seconds via a coroutine loop; emits `AppSwitch`, `ScreenUnlock`, `UserReturned` events to a `SharedFlow`; tracks which package is in foreground
 - [x] T038 Create `ScreenUnlockReceiver.kt` broadcast receiver in `service/ScreenUnlockReceiver.kt`: registers for `ACTION_USER_PRESENT`; emits `ScreenUnlock` event to `DistractionMonitor` flow
 - [x] T039 Wire `DistractionMonitor` into `TimerService.kt`: instantiate monitor when session starts; collect its flow; on `UserReturned` call `LogDistractionUseCase`; on `DistractionDetected` update `timerState.distractionCount`
 - [x] T040 [US2] Create `LogDistractionUseCase.kt` in `domain/usecase/LogDistractionUseCase.kt`: inserts `DistractionEvent` row; updates `FocusSession.distractionCount` and `distractionTotalSeconds` denormalized fields
@@ -266,6 +266,23 @@
 - [x] M5 — `AppPreferencesTest.kt` created in `androidTest/`: 8 integration tests verifying DataStore read/write round-trips for pomodoroFocusMinutes, onboardingComplete, usageStatsPermissionAsked, and theme keys (Constitution V)
 - [x] M6 — FR-015/FR-026 enforcement: `clampStartForTier()` is now live code (not a no-op); default `isPremium=true` preserves existing caller behaviour while the mechanism is ready for real tier detection in V2
 - [x] L1 — plan.md Constitution Check updated to reflect constitution v1.0.0 ratification and all gates passing
+
+### Fix Pass 5 (V1 Polish & Duration Selection — Post-Device Testing)
+
+Tracks changes from `plan.md` "V1 Polish & Duration Selection" (2026-04-28), implemented after live device testing.
+
+- [x] T-P1 — `ui/analytics/FocusBarChart.kt`: column height `+28.dp` → `+48.dp`; date labels now fully visible below each bar
+- [x] T-P2a — `service/TimerService.kt`: add `clearNewlyAwardedBadges()` public method; mutates service StateFlow directly
+- [x] T-P2b — `ui/timer/TimerViewModel.kt`: call `timerService?.clearNewlyAwardedBadges()` in `onDismissBadge()`; badge dialog no longer reappears on back-navigation
+- [x] T-P3a — `service/DistractionMonitor.kt`: add `appNameCache: HashMap<String,String>`, `resolveAppName()` helper (PackageManager + launcher override), update `AppSwitch` data class to carry `appDisplayName: String`
+- [x] T-P3b — `service/DistractionMonitor.kt`: update `pollForegroundApp()` emit to pass `resolveAppName(settled)` into `AppSwitch` event
+- [x] T-P3c — `service/TimerService.kt`: add `private var distractionDisplayName: String?`; populate on `AppSwitch` event, clear on `ScreenUnlock`, pass display name to `LogDistractionUseCase` on `UserReturned`
+- [x] T-P4a — `ui/timer/TimerWheelPicker.kt`: new drum-roll Hours × Minutes composable using `LazyColumn` + `rememberSnapFlingBehavior`; replaces `CustomDurationPicker`
+- [x] T-P4b — `ui/timer/TimerViewModel.kt`: rename `_customDurationMinutes` → `_customDurationSeconds`; add `SessionMode` extension properties (`minSeconds`, `maxSeconds`, `defaultDurationSeconds`) as UI-layer constants; update `onModeSelected()` to apply mode-specific defaults; rename handlers
+- [x] T-P4c — `domain/usecase/BuildSessionConfigUseCase.kt`: remove `FocusPreferences` dependency; accept caller-supplied `durationSeconds`; add `MIN_DURATION_SECONDS`/`MAX_DURATION_SECONDS` constants
+- [x] T-P4d — `ui/timer/TimerScreen.kt`: show `TimerWheelPicker` for all 4 modes; restrict tag input to CUSTOM and STUDY only
+- [x] T-P4e — `test/.../usecase/BuildSessionConfigUseCaseTest.kt`: update for renamed `durationSeconds` param; add coverage for all 4 mode-range combinations
+- [x] T-P5 — Delete `ui/timer/CustomDurationPicker.kt` (dead code, superseded by `TimerWheelPicker.kt` in T-P4a)
 
 ---
 

@@ -150,6 +150,8 @@ class TimerViewModel @Inject constructor(
 
     fun onModeSelected(mode: SessionMode) {
         _selectedMode.value = mode
+        // defaultDurationSeconds is a UI-layer constant (see extension below), not a domain rule.
+        // Intentionally not reading FocusPreferences here to keep the ViewModel preference-free.
         _customDurationSeconds.value = mode.defaultDurationSeconds
     }
 

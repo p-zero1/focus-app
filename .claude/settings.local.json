@@ -64,7 +64,9 @@
       "Bash(.\\\\gradlew assembleDebug)",
       "PowerShell(adb devices)",
       "PowerShell(& \".specify/scripts/powershell/check-prerequisites.ps1\" -Json -RequireTasks -IncludeTasks 2>&1)",
-      "PowerShell(& \".specify/extensions/git/scripts/powershell/auto-commit.ps1\" \"after_analyze\")"
+      "PowerShell(& \".specify/extensions/git/scripts/powershell/auto-commit.ps1\" \"after_analyze\")",
+      "Bash(Remove-Item \"c:\\\\focus-app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\focusapp\\\\ui\\\\timer\\\\CustomDurationPicker.kt\" -Force)",
+      "PowerShell(& \".specify/extensions/git/scripts/powershell/auto-commit.ps1\" \"after_implement\")"
     ]
   }
 }

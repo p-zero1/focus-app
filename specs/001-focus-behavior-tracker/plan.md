@@ -191,6 +191,8 @@ is DistractionMonitor.Event.UserReturned -> {
 - On `UserReturned` event: pass `distractionDisplayName` as `appPackageName` to use case
 - On `ScreenUnlock` event: `distractionDisplayName = null` (no app name for screen unlock)
 
+> **Implemented**: The simpler path above was used. See `TimerService.kt` `distractionDisplayName` field and `collectDistractionEvents()`.
+
 ---
 
 ### Enhancement 1 + 2 — Drum-Roll Picker for All Modes

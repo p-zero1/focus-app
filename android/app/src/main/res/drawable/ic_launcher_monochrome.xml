@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Focus App canonical logo mark — white F monogram.
-  Source: design-system assets/logo.svg
-  Canvas: 108×108dp (adaptive icon safe zone: inner 72×72, i.e. x/y 18–90)
-  All F strokes sit well within the safe zone (leftmost x=36, rightmost x=72, top y=28, bottom y=80).
-
-  F construction:
-    · Vertical stem  — x 36–45, y 28–80  (w=9, h=52, rx=4.5 pill)
-    · Top bar        — x 36–72, y 28–37  (w=36, h=9, rx=4.5 pill)
-    · Middle bar     — x 36–62, y 50–59  (w=26, h=9, rx=4.5 pill)
+  Monochrome icon for Android 13+ themed/adaptive icons.
+  The launcher tints this with the user's wallpaper color; we provide only shape.
+  Same F geometry as ic_launcher_foreground.xml — white on transparent.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -16,7 +10,6 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Vertical stem: x=36 y=28 w=9 h=52 rx=4.5 (capsule — rx = w/2) -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="
@@ -28,7 +21,6 @@
           L 36,32.5
           A 4.5,4.5 0 0 1 40.5,28 Z"/>
 
-    <!-- Top bar: x=36 y=28 w=36 h=9 rx=4.5 (capsule — rx = h/2) -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="
@@ -40,7 +32,6 @@
           A 4.5,4.5 0 0 1 36,32.5
           A 4.5,4.5 0 0 1 40.5,28 Z"/>
 
-    <!-- Middle bar: x=36 y=50 w=26 h=9 rx=4.5 (capsule — rx = h/2) -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="

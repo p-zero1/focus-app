@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Focus App logo mark — for in-app use (splash, onboarding, about screen).
+  Self-contained: gradient background rounded-rect + white F monogram.
+  Use as: Image(painterResource(R.drawable.ic_app_logo), contentDescription = "Focus App")
+  Source: design-system assets/logo.svg
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+      Background: rounded rect rx=24, filled with the design-system gradient
+      (#9D94FF → #6C63FF → #3A2F8F, top-left to bottom-right)
+      Path: M24,0 → top-right arc → right side → bottom-right arc
+            → bottom side → bottom-left arc → left side → top-left arc → Z
+    -->
+    <path
+        android:pathData="
+          M 24,0
+          L 84,0
+          A 24,24 0 0 1 108,24
+          L 108,84
+          A 24,24 0 0 1 84,108
+          L 24,108
+          A 24,24 0 0 1 0,84
+          L 0,24
+          A 24,24 0 0 1 24,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108">
+                <item android:offset="0"    android:color="#9D94FF"/>
+                <item android:offset="0.55" android:color="#6C63FF"/>
+                <item android:offset="1"    android:color="#3A2F8F"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- F mark — vertical stem (x=36 y=28 w=9 h=52 rx=4.5) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 40.5,28
+          A 4.5,4.5 0 0 1 45,32.5
+          L 45,75.5
+          A 4.5,4.5 0 0 1 40.5,80
+          A 4.5,4.5 0 0 1 36,75.5
+          L 36,32.5
+          A 4.5,4.5 0 0 1 40.5,28 Z"/>
+
+    <!-- F mark — top bar (x=36 y=28 w=36 h=9 rx=4.5) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 40.5,28
+          L 67.5,28
+          A 4.5,4.5 0 0 1 72,32.5
+          A 4.5,4.5 0 0 1 67.5,37
+          L 40.5,37
+          A 4.5,4.5 0 0 1 36,32.5
+          A 4.5,4.5 0 0 1 40.5,28 Z"/>
+
+    <!-- F mark — middle bar (x=36 y=50 w=26 h=9 rx=4.5) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+          M 40.5,50
+          L 57.5,50
+          A 4.5,4.5 0 0 1 62,54.5
+          A 4.5,4.5 0 0 1 57.5,59
+          L 40.5,59
+          A 4.5,4.5 0 0 1 36,54.5
+          A 4.5,4.5 0 0 1 40.5,50 Z"/>
+
+</vector>

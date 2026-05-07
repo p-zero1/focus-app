@@ -65,7 +65,6 @@ import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.SessionOutcome
 import com.focusapp.domain.model.TimerStatus
 import com.focusapp.ui.profile.BadgeAwardedDialog
-import androidx.compose.foundation.layout.height
 
 @Composable
 fun TimerScreen(

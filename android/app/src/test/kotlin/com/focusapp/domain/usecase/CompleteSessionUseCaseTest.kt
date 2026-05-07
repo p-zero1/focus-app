@@ -59,8 +59,8 @@ class CompleteSessionUseCaseTest {
 
         useCase(sessionId, actualDuration = 1500, endTime = 0L)
 
-        // 1500 s = 25 min → floor(1500 / 300) × 10 = 50 XP
-        assertEquals(50, fakeSessionRepo.updatedSessions.last().xpAwarded)
+        // 1500 s = 25 min, distractionCount=0 → CLEAN → floor(1500/300)×10×1.5 = 75 XP
+        assertEquals(75, fakeSessionRepo.updatedSessions.last().xpAwarded)
     }
 
     @Test

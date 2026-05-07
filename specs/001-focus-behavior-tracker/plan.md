@@ -387,4 +387,38 @@ After all tasks complete, verify on device:
 | 6 | Select **Deep Work** → wheel shows 30–180 min, default 90 min | Picker visible; Start works |
 | 7 | Select **Study** → wheel shows 5–180 min + tag field | Same as Custom; tag optional |
 | 8 | Select **Custom** → wheel shows 5–180 min + tag field | Picker replaces old slider |
+
+---
+
+## Phase 9 — Competitive Parity (Feature Pack 1)
+
+**Date**: 2026-05-07 | **Triggered by**: Competitive research (Forest, Focusmate, Freedom, Serene, Habitica, Finch, Flora)  
+**Spec FRs**: FR-029 through FR-033 (added to spec.md)
+
+### Constitution Check
+
+| Gate | Status | Notes |
+|------|--------|-------|
+| No unnecessary abstractions (§VI) | ✅ PASS | `FocusAudioPlayer` has 4 mode call sites — justified new file |
+| Permissions degraded gracefully (§IV) | ✅ PASS | No new permissions; `AudioTrack` has no permission requirement |
+| Offline-first (§III) | ✅ PASS | Audio generated programmatically; no network; no asset files |
+| Single module (§I) | ✅ PASS | No new Gradle modules |
+| Domain-first / no cross-layer imports (§II) | ⚠️ NOTE | `FocusAudioPlayer` lives in `ui/timer/` and is held by `TimerViewModel`. Audio management is classified as UI-layer ambient experience, not domain business logic. Rationale: no session data is read or written; no use-case logic involved; it is purely a playback helper. Acceptable under §VI (direct code first). |
+| V1 scope gate (§VII) | ✅ PASS | All Phase 9 features are UI enhancements extending existing V1 user stories; no V2/V3 feature code landed |
+| Layer-isolated testing (§V) | ✅ PASS | `AwardXpUseCaseTest` updated with clean bonus paths; `FocusAudioPlayerTest` added for enum/label/placeholder coverage; AudioTrack playback tests are instrumented (requires device) |
+
+### Architecture Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Ambient audio architecture | `FocusAudioPlayer` in `ui/timer/`; held by `TimerViewModel`; not a use case or service | Audio is a UI ambient experience layer; no domain data involved; keeping it UI-layer avoids over-engineering |
+| Audio generation | Programmatic `AudioTrack` (MODE_STREAM, 44100 Hz mono PCM_16BIT) | No bundled assets; zero APK size increase; works offline; Gaussian white noise + 6-pole IIR pink/rain |
+| Audio thread | Daemon thread named `focus-audio`; `stopInternal()` joins with 400ms timeout | Avoids blocking main thread; daemon ensures no process-keep-alive if app crashes |
+| SessionOutcome derivation | Computed in `CompleteSessionUseCase` from `distractionCount` + `status`; not persisted | Ephemeral value passed to `AwardXpUseCase` and `EvaluateBadgesUseCase`; derivation rules in data-model.md |
+| Clean XP bonus | 1.5× applied to base XP in `AwardXpUseCase` when `SessionOutcome.CLEAN` | Rewards distraction-free behavior; multiplier is simple float math; no new DB schema |
+| Session goal / tag unification | `TimerState.sessionGoal` mirrors `config.tag`; `tag` remains the DB column name | No migration; `sessionGoal` is a read-only display field in TimerState; authoritative value is always `FocusSession.tag` |
+| Tag input scope expansion | Tag input shown for all 4 modes (FR-020 updated) | Competitive research: users benefit from goal context regardless of mode; spec updated to match |
+| Pomodoro series counter | Derived from `pomodoroIntervalsDone % 4 + 1` in TimerScreen | No new state; `pomodoroIntervalsDone` already tracked in `TimerService` |
+| Daily goal ring | `Canvas.drawArc` in `ProfileScreen.kt`; amber → green transition at 100% | No new composable file justified (single call site); data from existing `ProfileViewModel` fields |
+| Outcome accent strip | Left 3dp `Box` with `fillMaxHeight()` inside `IntrinsicSize.Min` Row in `SessionRow.kt` | CSS-border equivalent in Compose; no new composable; color derived from `sessionOutcome` field |
 | 9 | Scroll Custom to 1h 30m → Start | Countdown begins at 90:00 |

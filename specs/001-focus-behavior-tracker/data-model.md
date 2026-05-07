@@ -118,6 +118,30 @@ A user-configured or auto-suggested notification schedule.
 
 ---
 
+## Enumerations
+
+### SessionOutcome
+
+Computed at session completion inside `CompleteSessionUseCase`. Not persisted as a DB column — derived from the completed session's fields and passed to downstream use cases (`AwardXpUseCase`, `EvaluateBadgesUseCase`) before the session row is finalised.
+
+| Value | Condition | Notes |
+|-------|-----------|-------|
+| `CLEAN` | `distractionCount == 0` AND session status `COMPLETED` | Earns 1.5× XP multiplier |
+| `INTERRUPTED` | `distractionCount in 1..3` OR status `PARTIAL` | Flat XP; no penalty |
+| `FAILED` | `distractionCount > 3` OR (`FocusStrictness.HARDCORE` AND session ended early) | Flat XP; no penalty |
+
+**Derivation logic (pseudocode):**
+```
+outcome = when {
+    status == PARTIAL && strictness == HARDCORE -> FAILED
+    distractionCount == 0 && status == COMPLETED -> CLEAN
+    distractionCount <= 3 -> INTERRUPTED
+    else -> FAILED
+}
+```
+
+---
+
 ## Derived / Computed Values
 
 These are not stored as columns but computed at query time or in the domain layer:
@@ -128,7 +152,9 @@ These are not stored as columns but computed at query time or in the domain laye
 | Weekly focus hours | FocusSession | `SUM(actualDuration) / 3600 WHERE startTime ≥ week_start` |
 | Focus Score (day) | FocusSession + DistractionEvent | `clamp(completedRatio×70 + distractionFreeRatio×30, 0, 100)` |
 | Best focus time | FocusSession | Bucket sessions by 2-hour slots; find slot with lowest avg distractionCount |
-| XP for session | FocusSession | `floor(actualDuration / 300) × 10` |
+| XP for session (base) | FocusSession | `floor(actualDuration / 300) × 10` |
+| XP for session (clean) | FocusSession + SessionOutcome | `floor(actualDuration / 300) × 10 × 1.5` when `SessionOutcome.CLEAN` |
+| SessionOutcome | FocusSession + FocusStrictness | See `SessionOutcome` enum table above |
 
 ---
 

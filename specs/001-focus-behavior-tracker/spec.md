@@ -147,16 +147,24 @@ A user who usually studies around 9 PM receives a push notification at 8:50 PM s
 
 **Gamification**
 
-- **FR-016**: System MUST award XP points for each completed session: 10 XP per 5 minutes of actual focus time (e.g., 50 XP for a 25-minute session). Formula: `floor(actualDurationSeconds / 300) × 10`.
+- **FR-016**: System MUST award XP points for each completed session. Base formula: `floor(actualDurationSeconds / 300) × 10` (10 XP per 5 minutes; e.g., 50 XP for 25 min). **Clean session bonus**: sessions with zero distractions and `COMPLETED` status receive a 1.5× multiplier applied to the base XP (e.g., 75 XP for a distraction-free 25-minute session). Non-clean sessions receive flat base XP. See `SessionOutcome` in data-model.md for derivation rules.
 - **FR-017**: System MUST maintain a consecutive-day streak counter that increments when at least one session is completed per calendar day.
 - **FR-018**: System MUST award badges when milestone conditions are met and notify the user in-app.
 - **FR-019** *(V2)*: System MUST display a leaderboard showing weekly focus hours for connected friends or global users (requires account creation).
 
 **Study/Coding Mode**
 
-- **FR-020**: System MUST provide a Study Mode with an optional countdown target and optional session tagging. The tag input field is shown for **CUSTOM and STUDY modes only**; Pomodoro and Deep Work sessions are not taggable via the UI (tag stored as `null` for those modes). Tag entry is always optional — it is not required to start a session.
+- **FR-020**: System MUST provide a Study Mode with an optional countdown target and optional session tagging. The tag input field is shown for **all session modes** (Pomodoro, Deep Work, Custom, Study) so users can set a focus goal for any session type. Tag entry is always optional — it is not required to start a session. During an active session the entered tag is displayed as a live goal overlay on the timer orb. *(Updated from "CUSTOM and STUDY only" after competitive-parity research showed goal context improves focus across all modes.)*
 - **FR-021**: System MUST allow users to filter session history by tag and view aggregated time per tag.
 - **FR-022**: System MUST fire an alarm-style notification when a Study Mode countdown reaches zero, even when the app is backgrounded.
+
+**Focus Experience Enhancements** *(V1 — Competitive Parity, shipped in Feature Pack 1)*
+
+- **FR-029**: System MUST display a Pomodoro series counter ("Pomodoro N of 4") during active Pomodoro sessions, resetting to 1 after every 4th interval completes the long-break cycle.
+- **FR-030**: System MUST display the session's goal tag as a live overlay on the timer orb during any active session in which a goal tag was entered. The overlay must be visible but non-intrusive (reduced opacity).
+- **FR-031**: System MUST provide ambient focus sound options (white noise, rain, off) selectable from the active timer screen. Audio is generated programmatically via `AudioTrack` — no bundled audio files are required. Playback persists across start/pause/resume and stops when the session ends or the user navigates away.
+- **FR-032**: System MUST display a daily goal progress ring on the Profile screen showing today's focus minutes vs. the user-configured daily goal. The ring transitions from amber to green when the goal is met.
+- **FR-033**: System MUST display a colored outcome accent strip (3 dp left border) on each session row in the History screen: green for `CLEAN`, amber for `INTERRUPTED`, red for `FAILED`, transparent if outcome is unset.
 
 **Reminders**
 

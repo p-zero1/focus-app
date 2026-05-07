@@ -280,7 +280,7 @@ Tracks changes from `plan.md` "V1 Polish & Duration Selection" (2026-04-28), imp
 - [x] T-P4a — `ui/timer/TimerWheelPicker.kt`: new drum-roll Hours × Minutes composable using `LazyColumn` + `rememberSnapFlingBehavior`; replaces `CustomDurationPicker`
 - [x] T-P4b — `ui/timer/TimerViewModel.kt`: rename `_customDurationMinutes` → `_customDurationSeconds`; add `SessionMode` extension properties (`minSeconds`, `maxSeconds`, `defaultDurationSeconds`) as UI-layer constants; update `onModeSelected()` to apply mode-specific defaults; rename handlers
 - [x] T-P4c — `domain/usecase/BuildSessionConfigUseCase.kt`: remove `FocusPreferences` dependency; accept caller-supplied `durationSeconds`; add `MIN_DURATION_SECONDS`/`MAX_DURATION_SECONDS` constants
-- [x] T-P4d — `ui/timer/TimerScreen.kt`: show `TimerWheelPicker` for all 4 modes; restrict tag input to CUSTOM and STUDY only
+- [x] T-P4d — `ui/timer/TimerScreen.kt`: show `TimerWheelPicker` for all 4 modes; restrict tag input to CUSTOM and STUDY only *(superseded by T-CP02 — tag extended to all modes; see FR-020 update)*
 - [x] T-P4e — `test/.../usecase/BuildSessionConfigUseCaseTest.kt`: update for renamed `durationSeconds` param; add coverage for all 4 mode-range combinations
 - [x] T-P5 — Delete `ui/timer/CustomDurationPicker.kt` (dead code, superseded by `TimerWheelPicker.kt` in T-P4a)
 
@@ -369,7 +369,7 @@ Competitive research (Forest, Focusmate, Freedom, Serene, Habitica, Finch, Flora
 ### Shipped in v1 Feature Pack
 
 - [x] **T-CP01** — Pomodoro series counter in UI: shows "Pomodoro N of 4" during active sessions (`TimerScreen.kt`)
-- [x] **T-CP02** — Session goal input for all modes (not just Custom): tag field visible on Pomodoro, Deep Work, Study; live overlay during session (`TimerScreen.kt`)
+- [x] **T-CP02** — Session goal input for all modes (reverts T-P4d restriction): tag field visible on Pomodoro, Deep Work, Study, Custom; live goal overlay shown on timer orb during active sessions (`TimerScreen.kt`). **Terminology note**: displayed as "goal" in UI; stored as `tag` in DB and `sessionGoal` in `TimerState` (read-only mirror of `config.tag`). `FocusSession.tag` is the single source of truth.
 - [x] **T-CP03** — Ambient focus sounds: WHITE_NOISE + RAIN generated programmatically via `AudioTrack`; `SoundToggleRow` in timer UI (`FocusAudioPlayer.kt`, `TimerViewModel.kt`, `TimerScreen.kt`)
 - [x] **T-CP04** — Clean session XP bonus: 1.5× multiplier for `SessionOutcome.CLEAN` in `AwardXpUseCase.kt`
 - [x] **T-CP05** — Daily goal ring on Profile: Canvas `drawArc` progress ring with amber/green color transition (`ProfileScreen.kt`)

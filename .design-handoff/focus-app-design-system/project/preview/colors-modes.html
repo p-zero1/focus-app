@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .row-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modes { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .mode { padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px; min-height:130px; position:relative; overflow:hidden; }
+  .focus { background:radial-gradient(120% 80% at 18% 12%, rgba(108,99,255,0.22), transparent 60%), linear-gradient(180deg,#0F0F1A 0%,#08081A 100%); }
+  .chill { background:radial-gradient(120% 80% at 20% 10%, rgba(142,133,255,0.28), transparent 60%), linear-gradient(180deg,#1B1830 0%,#14122A 100%); }
+
+  /* Hardcore options */
+  .hc-mono   { background:#000; border-color:rgba(255,255,255,0.1); }
+  .hc-blood  { background:radial-gradient(120% 80% at 50% 0%, rgba(255,30,30,0.18), transparent 60%), #0A0606; border-color:rgba(255,30,30,0.18); }
+  .hc-acid   { background:#0A0E08; border-color:rgba(57,255,20,0.18); }
+  .hc-void   { background:linear-gradient(180deg,#000 0%,#000 100%); border-color:rgba(255,255,255,0.04); }
+  .hc-blueprint { background:linear-gradient(180deg,#031018 0%,#020A10 100%); border-color:rgba(0,210,255,0.18); }
+  .hc-ember  { background:radial-gradient(120% 80% at 50% 100%, rgba(255,90,30,0.22), transparent 60%), #0E0703; border-color:rgba(255,90,30,0.18); }
+
+  .orb { width:44px; height:44px; border-radius:50%; align-self:center; }
+  .of { background:radial-gradient(circle at 38% 32%, #B5AFFF, #6C63FF 60%, #2A1F8F); box-shadow:0 0 28px 4px rgba(108,99,255,0.5); }
+  .oc { background:radial-gradient(circle at 38% 32%, #C8C2FF, #8E85FF 60%, #4A41B8); box-shadow:0 0 28px 4px rgba(142,133,255,0.55); }
+
+  .o-mono   { background:#FFF; box-shadow:0 0 24px 2px rgba(255,255,255,0.3); }
+  .o-blood  { background:radial-gradient(circle at 38% 32%, #FF8888, #E40000 60%, #5A0000); box-shadow:0 0 28px 4px rgba(255,30,30,0.5); }
+  .o-acid   { background:radial-gradient(circle at 38% 32%, #C8FFB0, #39FF14 60%, #0E5C00); box-shadow:0 0 28px 4px rgba(57,255,20,0.45); }
+  .o-void   { background:#0A0A0A; border:1.5px solid rgba(255,255,255,0.5); box-shadow:inset 0 0 16px rgba(255,255,255,0.05); }
+  .o-blue   { background:radial-gradient(circle at 38% 32%, #BFF6FF, #00D2FF 60%, #002A4A); box-shadow:0 0 28px 4px rgba(0,210,255,0.5); }
+  .o-ember  { background:radial-gradient(circle at 38% 32%, #FFD9A8, #FF5A1E 60%, #5C1A00); box-shadow:0 0 28px 4px rgba(255,90,30,0.5); }
+
+  .mname { font-size:13px; font-weight:700; color:#fff; }
+  .mdesc { font-size:10.5px; color:rgba(255,255,255,0.6); line-height:1.35; }
+  .swatch-row { display:flex; gap:4px; margin-top:auto; }
+  .sw { width:14px; height:14px; border-radius:3px; border:1px solid rgba(255,255,255,0.08); }
+</style></head>
+<body><div class="card">
+  <div class="label">Default modes</div>
+  <div class="row-pair">
+    <div class="mode focus">
+      <div class="orb of"></div>
+      <div class="mname">Focus</div>
+      <div class="mdesc">Calm · immersive · default</div>
+      <div class="swatch-row"><div class="sw" style="background:#0F0F1A"></div><div class="sw" style="background:#1A1A2E"></div><div class="sw" style="background:#6C63FF"></div><div class="sw" style="background:#FFB347"></div></div>
+    </div>
+    <div class="mode chill">
+      <div class="orb oc"></div>
+      <div class="mname">Chill</div>
+      <div class="mdesc">Friendly · softer · younger</div>
+      <div class="swatch-row"><div class="sw" style="background:#1B1830"></div><div class="sw" style="background:#262345"></div><div class="sw" style="background:#8E85FF"></div><div class="sw" style="background:#FFD08A"></div></div>
+    </div>
+  </div>
+
+  <div class="label" style="margin-top:6px">Hardcore — direction options</div>
+  <div class="modes">
+    <div class="mode hc-mono">
+      <div class="orb o-mono"></div>
+      <div class="mname">Mono <span style="color:rgba(255,255,255,0.5);font-weight:400;font-size:10px">· current</span></div>
+      <div class="mdesc">Pure black + white. Disciplined. Apple-Watch-Always-On energy.</div>
+      <div class="swatch-row"><div class="sw" style="background:#000"></div><div class="sw" style="background:#0A0A0A"></div><div class="sw" style="background:#FFF"></div><div class="sw" style="background:#FF3B3B"></div></div>
+    </div>
+    <div class="mode hc-blood">
+      <div class="orb o-blood"></div>
+      <div class="mname">Blood</div>
+      <div class="mdesc">Black + crimson. High-stakes. Distraction shockwave feels visceral.</div>
+      <div class="swatch-row"><div class="sw" style="background:#0A0606"></div><div class="sw" style="background:#1A0A0A"></div><div class="sw" style="background:#E40000"></div><div class="sw" style="background:#FFFFFF"></div></div>
+    </div>
+    <div class="mode hc-acid">
+      <div class="orb o-acid"></div>
+      <div class="mname">Terminal</div>
+      <div class="mdesc">Black + acid green. Hacker / CRT phosphor. Deep work as sysadmin energy.</div>
+      <div class="swatch-row"><div class="sw" style="background:#0A0E08"></div><div class="sw" style="background:#101510"></div><div class="sw" style="background:#39FF14"></div><div class="sw" style="background:#FFFFFF"></div></div>
+    </div>
+    <div class="mode hc-void">
+      <div class="orb o-void"></div>
+      <div class="mname">Void</div>
+      <div class="mdesc">Pure OLED black. Orb is a thin white outline only. Maximum minimalism.</div>
+      <div class="swatch-row"><div class="sw" style="background:#000"></div><div class="sw" style="background:#000;border-color:rgba(255,255,255,0.3)"></div><div class="sw" style="background:transparent;border:1.5px solid rgba(255,255,255,0.5)"></div><div class="sw" style="background:#FF3B3B"></div></div>
+    </div>
+    <div class="mode hc-blueprint">
+      <div class="orb o-blue"></div>
+      <div class="mname">Blueprint</div>
+      <div class="mdesc">Deep navy + cyan. Architectural / engineering. Cool & precise.</div>
+      <div class="swatch-row"><div class="sw" style="background:#031018"></div><div class="sw" style="background:#06202E"></div><div class="sw" style="background:#00D2FF"></div><div class="sw" style="background:#FFFFFF"></div></div>
+    </div>
+    <div class="mode hc-ember">
+      <div class="orb o-ember"></div>
+      <div class="mname">Ember</div>
+      <div class="mdesc">Charcoal + molten orange. Forge / endurance. Warm intensity vs Blood's cold.</div>
+      <div class="swatch-row"><div class="sw" style="background:#0E0703"></div><div class="sw" style="background:#1A0E06"></div><div class="sw" style="background:#FF5A1E"></div><div class="sw" style="background:#FFFFFF"></div></div>
+    </div>
+  </div>
+</div></body></html>

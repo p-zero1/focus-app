@@ -1,0 +1,20 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  .b { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:16px; }
+  .b img { width:64px; height:64px; }
+  .b.locked img { filter:grayscale(1) brightness(0.45); }
+  .b .nm { font-size:11px; font-weight:600; text-align:center; line-height:1.3; }
+  .b.locked .nm { color:var(--text-3); }
+</style></head>
+<body><div class="card">
+  <div class="label">Badge gallery · earned & locked</div>
+  <div class="grid">
+    <div class="b"><img src="../assets/badge-first-focus.svg" alt=""><div class="nm">First Focus</div></div>
+    <div class="b"><img src="../assets/badge-deep-diver.svg" alt=""><div class="nm">Deep Diver</div></div>
+    <div class="b"><img src="../assets/badge-streak-starter.svg" alt=""><div class="nm">Streak Starter</div></div>
+    <div class="b locked"><img src="../assets/badge-streak-master.svg" alt=""><div class="nm">Streak Master</div></div>
+    <div class="b locked"><img src="../assets/badge-clean-hour.svg" alt=""><div class="nm">Clean Hour</div></div>
+  </div>
+</div></body></html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .ds-card { background:var(--surface); border:1px solid var(--border-soft); border-radius:16px; padding:18px; box-shadow:0 4px 16px rgba(0,0,0,0.32); display:flex; flex-direction:column; gap:10px; }
+  .ttl { font-size:13px; color:var(--text-2); }
+  .num { font-size:34px; font-weight:700; letter-spacing:-0.02em; }
+  .input { background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:14px 16px; color:var(--text-1); font-family:var(--font-sans); font-size:15px; width:100%; }
+  .input::placeholder { color:var(--text-3); }
+  .input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(108,99,255,0.2); }
+</style></head>
+<body><div class="card">
+  <div class="label">Cards</div>
+  <div class="grid">
+    <div class="ds-card"><div class="ttl">Focus score · today</div><div class="num" style="color:var(--success)">87</div></div>
+    <div class="ds-card"><div class="ttl">Distractions</div><div class="num" style="color:var(--warning)">3</div></div>
+  </div>
+  <div class="label" style="margin-top:6px">Inputs</div>
+  <input class="input" placeholder="e.g. DSA, Project X">
+  <input class="input" value="Project X" style="border-color:var(--primary);box-shadow:0 0 0 3px rgba(108,99,255,0.2)">
+</div></body></html>

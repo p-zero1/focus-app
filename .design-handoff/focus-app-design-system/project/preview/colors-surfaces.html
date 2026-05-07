@@ -1,0 +1,24 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .swatch { display:flex; flex-direction:column; gap:6px; flex:1; }
+  .chip { height:56px; border-radius:10px; border:1px solid var(--border-soft); }
+  .name { font-size:12px; font-weight:600; color:var(--text-1); }
+  .hex { font-family:var(--font-mono); font-size:10px; color:var(--text-2); }
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+</style></head>
+<body><div class="card">
+  <div class="label">Surfaces & text · Focus mode</div>
+  <div class="grid">
+    <div class="swatch"><div class="chip" style="background:#08081A"></div><div class="name">Bg deep</div><div class="hex">#08081A</div></div>
+    <div class="swatch"><div class="chip" style="background:#0F0F1A"></div><div class="name">Bg</div><div class="hex">#0F0F1A</div></div>
+    <div class="swatch"><div class="chip" style="background:#1A1A2E"></div><div class="name">Surface</div><div class="hex">#1A1A2E</div></div>
+    <div class="swatch"><div class="chip" style="background:#23233D"></div><div class="name">Surface 2</div><div class="hex">#23233D</div></div>
+    <div class="swatch"><div class="chip" style="background:rgba(26,26,46,0.72);backdrop-filter:blur(8px)"></div><div class="name">Glass</div><div class="hex">surface/.72 + blur</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="swatch"><div class="chip" style="background:#FFFFFF"></div><div class="name" style="color:var(--text-1)">Text 1</div><div class="hex">#FFFFFF</div></div>
+    <div class="swatch"><div class="chip" style="background:#9E9E9E"></div><div class="name">Text 2</div><div class="hex">#9E9E9E</div></div>
+    <div class="swatch"><div class="chip" style="background:#5C5C70"></div><div class="name">Text 3</div><div class="hex">#5C5C70</div></div>
+  </div>
+</div></body></html>

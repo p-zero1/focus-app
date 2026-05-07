@@ -1,0 +1,21 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .row-m { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; }
+  .nm { font-size:13px; font-weight:600; flex:1; }
+  .meta { font-family:var(--font-mono); font-size:11px; color:var(--text-2); }
+  .dot { width:8px; height:8px; border-radius:50%; }
+</style></head>
+<body><div class="card">
+  <div class="label">Easing · duration tokens</div>
+  <div class="grid">
+    <div class="row-m"><div class="dot" style="background:#6C63FF"></div><div class="nm">Press</div><div class="meta">120ms</div></div>
+    <div class="row-m"><div class="dot" style="background:#6C63FF"></div><div class="nm">Toggle / fade</div><div class="meta">220ms</div></div>
+    <div class="row-m"><div class="dot" style="background:#FFB347"></div><div class="nm">Sheet / screen</div><div class="meta">400ms</div></div>
+    <div class="row-m"><div class="dot" style="background:#FFB347"></div><div class="nm">Long transition</div><div class="meta">800ms</div></div>
+    <div class="row-m"><div class="dot" style="background:#4CAF50"></div><div class="nm">Orb breath</div><div class="meta">4s loop</div></div>
+    <div class="row-m"><div class="dot" style="background:#FF6B6B"></div><div class="nm">Collapse</div><div class="meta">1.2s fade</div></div>
+  </div>
+  <div class="meta" style="margin-top:4px">ease-out (entrances) · ease-in-out (state) · back-out (rewards only)</div>
+</div></body></html>

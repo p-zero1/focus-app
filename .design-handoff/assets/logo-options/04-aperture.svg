@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <defs>
+    <linearGradient id="o4bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#23233D"></stop>
+      <stop offset="100%" stop-color="#0A0820"></stop>
+    </linearGradient>
+    <radialGradient id="o4orb" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"></stop>
+      <stop offset="40%" stop-color="#C8C2FF"></stop>
+      <stop offset="100%" stop-color="#6C63FF"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="108" height="108" rx="24" fill="url(#o4bg)"></rect>
+  
+  <g transform="translate(54 54)">
+    <g fill="#6C63FF" fill-opacity="0.25">
+      <path d="M -32 0 L -8 -14 L -8 14 Z"></path>
+      <path d="M -16 -28 L 0 -8 L -22 4 Z" transform="rotate(60)"></path>
+      <path d="M -16 -28 L 0 -8 L -22 4 Z" transform="rotate(120)"></path>
+      <path d="M -16 -28 L 0 -8 L -22 4 Z" transform="rotate(180)"></path>
+      <path d="M -16 -28 L 0 -8 L -22 4 Z" transform="rotate(240)"></path>
+      <path d="M -16 -28 L 0 -8 L -22 4 Z" transform="rotate(300)"></path>
+    </g>
+  </g>
+  
+  <circle cx="54" cy="54" r="16" fill="url(#o4orb)" filter="url(#og4)"></circle>
+  <filter id="og4" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="0.5"></feGaussianBlur>
+  </filter>
+  <circle cx="54" cy="54" r="22" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1"></circle>
+</svg>

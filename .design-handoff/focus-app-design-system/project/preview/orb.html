@@ -1,0 +1,144 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .holder { display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px 8px 14px; background:radial-gradient(80% 100% at 50% 40%, rgba(108,99,255,0.10), transparent 70%), var(--surface); border:1px solid var(--border-soft); border-radius:14px; min-height:180px; justify-content:flex-start; }
+  .stage { width:120px; height:120px; position:relative; display:flex; align-items:center; justify-content:center; }
+  .nm { font-size:12px; font-weight:700; }
+  .desc { font-size:10px; color:var(--text-2); text-align:center; line-height:1.35; padding:0 4px; }
+  @keyframes breath { 0%,100% { transform:scale(0.96); } 50% { transform:scale(1.04); } }
+  @keyframes spin   { to { transform:rotate(360deg); } }
+
+  /* 1. Plasma — current default. Calm, premium */
+  .v1 {
+    width:84px; height:84px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #C8C2FF 0%, #8E85FF 55%, #5A52E0 100%);
+    box-shadow:0 0 60px 6px rgba(142,133,255,0.55), inset 0 0 30px rgba(255,255,255,0.22);
+    animation:breath 4s ease-in-out infinite;
+  }
+
+  /* 2. Liquid blob — gooey, organic, friendly */
+  .v2 {
+    width:90px; height:90px; border-radius:60% 40% 55% 45% / 50% 60% 40% 50%;
+    background:
+      radial-gradient(circle at 28% 28%, #FFFFFF, transparent 35%),
+      radial-gradient(circle at 75% 75%, #FFD08A, transparent 50%),
+      radial-gradient(circle at 50% 50%, #8E85FF, #4A41B8 80%);
+    box-shadow:0 0 50px 4px rgba(142,133,255,0.5);
+    animation:breath 5s ease-in-out infinite;
+  }
+
+  /* 3. Aurora cloud — soft, dreamy */
+  .v3 {
+    width:96px; height:96px; border-radius:50%;
+    background:
+      radial-gradient(circle at 25% 30%, #FFD08A 0%, transparent 45%),
+      radial-gradient(circle at 75% 70%, #B5AFFF 0%, transparent 50%),
+      radial-gradient(circle at 50% 60%, #A5E5A8 0%, transparent 55%),
+      #1A1A2E;
+    box-shadow:0 0 50px 4px rgba(255,255,255,0.18);
+    filter:saturate(1.2);
+  }
+
+  /* 4. Bubble — translucent, light, kid-friendly */
+  .v4 {
+    width:88px; height:88px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,0.85) 0%, rgba(181,175,255,0.4) 30%, rgba(108,99,255,0.25) 70%);
+    border:1px solid rgba(255,255,255,0.4);
+    box-shadow:
+      inset 0 0 30px rgba(255,255,255,0.3),
+      0 0 40px rgba(142,133,255,0.4);
+    position:relative;
+  }
+  .v4::after { content:""; position:absolute; left:24%; top:18%; width:24%; height:14%; border-radius:50%; background:rgba(255,255,255,0.85); filter:blur(2px); }
+
+  /* 5. Smiley orb — most friendly, kid-leaning */
+  .v5 {
+    width:88px; height:88px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #FFE5B0 0%, #FFB347 55%, #C77A1F 100%);
+    box-shadow:0 0 50px 4px rgba(255,179,71,0.5), inset 0 0 24px rgba(255,255,255,0.25);
+    position:relative;
+    animation:breath 4s ease-in-out infinite;
+  }
+  .v5 i { position:absolute; background:#3A2410; border-radius:50%; }
+  .v5 i:nth-child(1) { width:7px; height:9px; left:30%; top:38%; }
+  .v5 i:nth-child(2) { width:7px; height:9px; right:30%; top:38%; }
+  .v5 i:nth-child(3) { width:24px; height:12px; left:50%; top:62%; transform:translateX(-50%); border-radius:0 0 24px 24px; background:transparent; border:2.5px solid #3A2410; border-top:none; }
+
+  /* 6. Petal — flower-like, soft, friendly */
+  .v6 { width:96px; height:96px; position:relative; animation:breath 4.5s ease-in-out infinite; }
+  .v6 i { position:absolute; width:48px; height:48px; border-radius:50% 50% 50% 0; left:50%; top:50%; transform-origin:0 0; background:radial-gradient(circle at 30% 30%, #C8C2FF, #8E85FF 70%); opacity:0.85; }
+  .v6 i:nth-child(1){ transform:translate(-50%,-50%) rotate(0deg) translate(0,-30px); }
+  .v6 i:nth-child(2){ transform:translate(-50%,-50%) rotate(72deg) translate(0,-30px); }
+  .v6 i:nth-child(3){ transform:translate(-50%,-50%) rotate(144deg) translate(0,-30px); }
+  .v6 i:nth-child(4){ transform:translate(-50%,-50%) rotate(216deg) translate(0,-30px); }
+  .v6 i:nth-child(5){ transform:translate(-50%,-50%) rotate(288deg) translate(0,-30px); }
+  .v6 i:nth-child(6){
+    width:32px; height:32px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #FFE5B0, #FFB347 70%);
+    box-shadow:0 0 24px rgba(255,179,71,0.5);
+    transform:translate(-50%,-50%); top:50%; left:50%;
+  }
+
+  /* 7. Gentle pulse — orb with soft outer halos */
+  .v7 { width:108px; height:108px; position:relative; }
+  .v7 i { position:absolute; border-radius:50%; }
+  .v7 i:nth-child(1){ inset:0; background:radial-gradient(circle, rgba(142,133,255,0.18), transparent 70%); }
+  .v7 i:nth-child(2){ inset:14px; background:radial-gradient(circle, rgba(142,133,255,0.3), transparent 70%); }
+  .v7 i:nth-child(3){
+    inset:32px;
+    background:radial-gradient(circle at 38% 32%, #FFFFFF 0%, #B5AFFF 30%, #8E85FF 70%);
+    box-shadow:0 0 30px rgba(142,133,255,0.6), inset 0 0 12px rgba(255,255,255,0.4);
+  }
+
+  /* 8. Heartbeat — cute, emotional */
+  .v8 {
+    width:84px; height:78px; position:relative;
+    animation:breath 1.5s ease-in-out infinite;
+  }
+  .v8::before, .v8::after {
+    content:""; position:absolute; width:48px; height:64px; border-radius:30px 30px 0 0;
+    background:radial-gradient(circle at 30% 30%, #FFD0E5, #FF85B5 70%);
+    box-shadow:0 0 30px rgba(255,133,181,0.5);
+  }
+  .v8::before { left:0; transform:rotate(-45deg); transform-origin:50% 100%; }
+  .v8::after  { right:0; transform:rotate(45deg); transform-origin:50% 100%; }
+</style></head>
+<body><div class="card">
+  <div class="label">Focus orb · friendlier directions · cross-age</div>
+  <div class="grid">
+
+    <div class="holder"><div class="stage"><div class="v1"></div></div>
+      <div class="nm">1 · Plasma</div>
+      <div class="desc">Calm, premium glow. Default. Works for all ages.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v2"></div></div>
+      <div class="nm">2 · Liquid</div>
+      <div class="desc">Gooey, organic, alive. Color blends. Inviting.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v3"></div></div>
+      <div class="nm">3 · Aurora</div>
+      <div class="desc">Multi-color cloud. Soft, dreamy, never aggressive.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v4"></div></div>
+      <div class="nm">4 · Bubble</div>
+      <div class="desc">Translucent, light, playful. Pops on distraction.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v5"><i></i><i></i><i></i></div></div>
+      <div class="nm">5 · Companion</div>
+      <div class="desc">Friendly face. Smiles when clean, frowns at distractions.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v6"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="nm">6 · Petal</div>
+      <div class="desc">Flower bloom. Petals open as session progresses.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v7"><i></i><i></i><i></i></div></div>
+      <div class="nm">7 · Pulse</div>
+      <div class="desc">Soft outer halos breathe outward. Calming, almost meditative.</div></div>
+
+    <div class="holder"><div class="stage"><div class="v8"></div></div>
+      <div class="nm">8 · Heart</div>
+      <div class="desc">Beats with focus rhythm. Most emotional. Younger users.</div></div>
+
+  </div>
+</div></body></html>

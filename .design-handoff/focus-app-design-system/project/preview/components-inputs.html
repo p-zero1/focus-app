@@ -1,0 +1,33 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .field { background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; height:48px; padding:0 16px; color:var(--text-1); font-size:15px; width:100%; font-family:var(--font-sans); outline:none; }
+  .field::placeholder { color:var(--text-2); }
+  .field:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(108,99,255,0.2); }
+  .seg { display:flex; background:var(--surface); border-radius:999px; padding:4px; border:1px solid var(--border-soft); width:fit-content; }
+  .seg button { background:transparent; border:none; color:var(--text-2); font-family:var(--font-sans); font-weight:500; font-size:14px; padding:8px 20px; border-radius:999px; cursor:pointer; }
+  .seg button.on { background:var(--primary); color:#fff; box-shadow:0 0 14px rgba(108,99,255,0.35); }
+  .wheel { display:flex; gap:14px; justify-content:center; align-items:center; padding:14px; background:var(--surface); border-radius:16px; border:1px solid var(--border-soft); }
+  .col-w { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:64px; }
+  .w-num { font-size:13px; color:var(--text-2); font-variant-numeric:tabular-nums; }
+  .w-num.sel { font-size:24px; font-weight:700; color:var(--text-1); }
+  .w-lbl { font-size:11px; color:var(--text-2); letter-spacing:0.08em; text-transform:uppercase; font-weight:600; }
+</style></head>
+<body><div class="card">
+  <div class="label">Tag input</div>
+  <input class="field" placeholder="e.g. DSA, Project X" value="DSA">
+  <div class="label" style="margin-top:6px">Daily / weekly toggle</div>
+  <div class="seg"><button class="on">Daily</button><button>Weekly</button></div>
+  <div class="label" style="margin-top:6px">Duration wheel · drum-roll</div>
+  <div class="wheel">
+    <div class="col-w">
+      <div class="w-num">0</div><div class="w-num sel">1</div><div class="w-num">2</div>
+      <div class="w-lbl" style="margin-top:4px">Hours</div>
+    </div>
+    <div style="font-size:24px;color:var(--text-2);font-weight:700">:</div>
+    <div class="col-w">
+      <div class="w-num">25</div><div class="w-num sel">30</div><div class="w-num">35</div>
+      <div class="w-lbl" style="margin-top:4px">Minutes</div>
+    </div>
+  </div>
+</div></body></html>

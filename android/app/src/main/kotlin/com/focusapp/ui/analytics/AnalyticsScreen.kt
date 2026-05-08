@@ -32,8 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AnalyticsScreen(
-    onNavigateToTimer: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToTimer: () -> Unit = {},
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()

@@ -30,8 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun HistoryScreen(
     onSessionClick: (Long) -> Unit,
-    onNavigateToTimer: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onNavigateToTimer: () -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()

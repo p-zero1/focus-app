@@ -38,9 +38,9 @@ private val bannerTextColor    = Color(0xFFFFC8C8)
 fun DistractionWarningBanner(
     visible: Boolean,
     onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
     awaySeconds: Int = 0,
     appName: String? = null,
-    modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
         visible = visible,

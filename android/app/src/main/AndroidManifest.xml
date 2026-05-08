@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Timer foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -8,13 +9,19 @@
     <!-- Distraction detection: requires user to grant manually in Settings -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions"
-        xmlns:tools="http://schemas.android.com/tools" />
+        tools:ignore="ProtectedPermissions" />
 
-    <!-- Resolve display names for any installed app (Instagram, WhatsApp, etc.).
+    <!-- Resolve display names for installed launcher apps (Instagram, WhatsApp, etc.).
          Android 11+ (API 30) package visibility blocks getApplicationInfo() for third-party
-         apps without this permission, causing names to fall back to the package suffix. -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+         apps without an explicit declaration. We only need apps the user can actually launch
+         (which are also the only ones the user can switch to during a focus session), so a
+         <queries> filter for MAIN/LAUNCHER intents is sufficient and Play-Store compliant. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <!-- Push notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

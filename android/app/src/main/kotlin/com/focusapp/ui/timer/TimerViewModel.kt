@@ -27,10 +27,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TimerViewModel @Inject constructor(
+    @android.annotation.SuppressLint("StaticFieldLeak")
     @ApplicationContext private val context: Context,
     private val buildSessionConfigUseCase: BuildSessionConfigUseCase,
 ) : ViewModel() {
 
+    @android.annotation.SuppressLint("StaticFieldLeak")
     private var timerService: TimerService? = null
 
     private val _timerState = MutableStateFlow(TimerState.IDLE)

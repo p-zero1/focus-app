@@ -28,10 +28,10 @@ class MigrationTest {
     )
 
     @Test
-    fun createVersion1_schemaIsValid() {
-        // Opens a fresh v1 database. MigrationTestHelper validates the schema
+    fun createVersion2_schemaIsValid() {
+        // Opens a fresh v2 database. MigrationTestHelper validates the schema
         // against the generated JSON export and throws if there is a mismatch.
-        helper.createDatabase(TEST_DB, 1).close()
+        helper.createDatabase(TEST_DB, 2).close()
     }
 
     // ---- Placeholder for future migrations ----

@@ -36,7 +36,7 @@ Mark each row **✅ PASS** or **❌ FAIL**. Stop and fix ❌ before shipping.
 | T2 | While T1 is running → tap **Pause** | Countdown freezes; orb dims slightly |
 | T3 | Tap **Resume** | Countdown continues from where it stopped |
 | T4 | Tap **Stop** → confirm | Session logged in History with actual duration (not 25:00) |
-| T5 | Select **Custom** → set duration to **3 minutes** → Start → let it finish | Break prompt dialog appears; History shows ~180s session with XP awarded |
+| T5 | Select **Custom** → set duration to **5 minutes** → Start → let it finish | Break prompt dialog appears; History shows ~300s session with XP awarded |
 | T6 | Dismiss the break prompt | Timer returns to IDLE immediately, new session can start |
 
 ### Distraction detection (requires usage-stats permission granted)

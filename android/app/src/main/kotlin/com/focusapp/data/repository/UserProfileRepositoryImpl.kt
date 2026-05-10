@@ -39,6 +39,11 @@ class UserProfileRepositoryImpl @Inject constructor(
         profileDao.incrementSessionsCompleted()
     }
 
+    override suspend fun setDailyGoal(minutes: Int) {
+        ensureProfileExists()
+        profileDao.setDailyGoal(minutes)
+    }
+
     private suspend fun ensureProfileExists() {
         if (profileDao.getProfileOnce() == null) {
             profileDao.upsert(UserProfileEntity())

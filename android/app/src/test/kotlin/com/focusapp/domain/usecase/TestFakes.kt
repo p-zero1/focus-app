@@ -48,6 +48,8 @@ internal class FakeUserProfileRepository(
     }
 
     override suspend fun incrementSessionsCompleted() {}
+
+    override suspend fun setDailyGoal(minutes: Int) {}
 }
 
 // ---- FakeBadgeRepository ----

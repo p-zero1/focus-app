@@ -16,4 +16,6 @@ interface UserProfileRepository {
     suspend fun updateStreak(streak: Int, date: String)
 
     suspend fun incrementSessionsCompleted()
+
+    suspend fun setDailyGoal(minutes: Int)
 }

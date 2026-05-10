@@ -13,8 +13,10 @@ import com.focusapp.domain.model.SessionConfig
 import com.focusapp.domain.model.SessionMode
 import com.focusapp.domain.model.TimerState
 import com.focusapp.domain.model.TimerStatus
+import com.focusapp.domain.preferences.FocusPreferences
 import com.focusapp.domain.usecase.BuildSessionConfigUseCase
 import com.focusapp.service.TimerService
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
@@ -30,6 +32,7 @@ class TimerViewModel @Inject constructor(
     @android.annotation.SuppressLint("StaticFieldLeak")
     @ApplicationContext private val context: Context,
     private val buildSessionConfigUseCase: BuildSessionConfigUseCase,
+    private val focusPreferences: FocusPreferences,
 ) : ViewModel() {
 
     @android.annotation.SuppressLint("StaticFieldLeak")
@@ -54,6 +57,9 @@ class TimerViewModel @Inject constructor(
     private val _showBreakPrompt = MutableStateFlow(false)
     val showBreakPrompt: StateFlow<Boolean> = _showBreakPrompt.asStateFlow()
 
+    private val _showStopConfirm = MutableStateFlow(false)
+    val showStopConfirm: StateFlow<Boolean> = _showStopConfirm.asStateFlow()
+
     private val _showDistractionWarning = MutableStateFlow(false)
     val showDistractionWarning: StateFlow<Boolean> = _showDistractionWarning.asStateFlow()
 
@@ -69,6 +75,13 @@ class TimerViewModel @Inject constructor(
     private val audioPlayer = FocusAudioPlayer()
     private val _soundMode = MutableStateFlow(FocusAudioPlayer.SoundMode.OFF)
     val soundMode: StateFlow<FocusAudioPlayer.SoundMode> = _soundMode.asStateFlow()
+
+    init {
+        // Seed the picker with the user's saved Pomodoro focus interval on first load.
+        viewModelScope.launch {
+            _customDurationSeconds.value = focusPreferences.pomodoroFocusMinutes.first() * 60
+        }
+    }
 
     fun onSoundModeChanged(mode: FocusAudioPlayer.SoundMode) {
         _soundMode.value = mode
@@ -135,13 +148,23 @@ class TimerViewModel @Inject constructor(
 
     fun onResume() = timerService?.resumeSession()
 
-    fun onStop() = timerService?.endSession()
+    fun onStopRequested() { _showStopConfirm.value = true }
+
+    fun onStopConfirmed() {
+        _showStopConfirm.value = false
+        timerService?.endSession()
+    }
+
+    fun onStopDismissed() { _showStopConfirm.value = false }
 
     fun onSkipBreak() = timerService?.skipBreak()
 
-    fun onStartBreak(breakSeconds: Int = 300) {
+    fun onStartBreak() {
         _showBreakPrompt.value = false
-        timerService?.startBreak(breakSeconds)
+        viewModelScope.launch {
+            val breakSeconds = focusPreferences.pomodoroShortBreakMinutes.first() * 60
+            timerService?.startBreak(breakSeconds)
+        }
     }
 
     fun onDismissBreakPrompt() {
@@ -161,9 +184,12 @@ class TimerViewModel @Inject constructor(
 
     fun onModeSelected(mode: SessionMode) {
         _selectedMode.value = mode
-        // defaultDurationSeconds is a UI-layer constant (see extension below), not a domain rule.
-        // Intentionally not reading FocusPreferences here to keep the ViewModel preference-free.
-        _customDurationSeconds.value = mode.defaultDurationSeconds
+        viewModelScope.launch {
+            _customDurationSeconds.value = when (mode) {
+                SessionMode.POMODORO -> focusPreferences.pomodoroFocusMinutes.first() * 60
+                else -> mode.defaultDurationSeconds
+            }
+        }
     }
 
     fun onCustomDurationSecondsChanged(seconds: Int) {

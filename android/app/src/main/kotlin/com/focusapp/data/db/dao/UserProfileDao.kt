@@ -41,4 +41,7 @@ interface UserProfileDao {
 
     @Query("UPDATE user_profile SET total_sessions_completed = total_sessions_completed + 1 WHERE id = 1")
     suspend fun incrementSessionsCompleted()
+
+    @Query("UPDATE user_profile SET daily_focus_goal_minutes = :minutes WHERE id = 1")
+    suspend fun setDailyGoal(minutes: Int)
 }

@@ -38,6 +38,7 @@ import com.focusapp.ui.history.HistoryScreen
 import com.focusapp.ui.history.SessionDetailScreen
 import com.focusapp.ui.onboarding.OnboardingScreen
 import com.focusapp.ui.profile.ProfileScreen
+import com.focusapp.ui.settings.SettingsScreen
 import com.focusapp.ui.timer.TimerScreen
 
 // Route constants — single source of truth for navigation
@@ -202,8 +203,14 @@ fun AppNavGraph(startupViewModel: StartupViewModel = hiltViewModel()) {
                         },
                     )
                 }
-                composable(Routes.PROFILE) { ProfileScreen() }
-                composable(Routes.SETTINGS) { Text("Settings") }
+                composable(Routes.PROFILE) {
+                    ProfileScreen(
+                        onNavigateToSettings = { navController.navigate(Routes.SETTINGS) },
+                    )
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(onBack = { navController.popBackStack() })
+                }
                 composable(Routes.SESSION_DETAIL) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString("id")?.toLongOrNull()
                         ?: return@composable

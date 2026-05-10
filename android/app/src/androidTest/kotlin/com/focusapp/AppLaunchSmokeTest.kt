@@ -2,6 +2,7 @@ package com.focusapp
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -60,22 +61,22 @@ class AppLaunchSmokeTest {
         skipOnboardingIfPresent()
 
         // Timer tab (already selected by default)
-        composeRule.onNodeWithText("Timer").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Timer")[0].assertIsDisplayed()
 
         // Analytics tab
-        composeRule.onNodeWithText("Analytics").performClick()
+        composeRule.onAllNodesWithText("Analytics")[0].performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Analytics").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Analytics")[0].assertIsDisplayed()
 
         // History tab
-        composeRule.onNodeWithText("History").performClick()
+        composeRule.onAllNodesWithText("History")[0].performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("History").assertIsDisplayed()
+        composeRule.onAllNodesWithText("History")[0].assertIsDisplayed()
 
         // Profile tab
-        composeRule.onNodeWithText("Profile").performClick()
+        composeRule.onAllNodesWithText("Profile")[0].performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Profile").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Profile")[0].assertIsDisplayed()
     }
 
     @Test

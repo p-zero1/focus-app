@@ -78,6 +78,7 @@ fun TimerScreen(
     val customDurationSeconds by viewModel.customDurationSeconds.collectAsState()
     val customTag             by viewModel.customTag.collectAsState()
     val showBreakPrompt       by viewModel.showBreakPrompt.collectAsState()
+    val showStopConfirm       by viewModel.showStopConfirm.collectAsState()
     val showDistractionWarning by viewModel.showDistractionWarning.collectAsState()
     val distractionAwaySeconds by viewModel.distractionAwaySeconds.collectAsState()
     val distractionAppName    by viewModel.distractionAppName.collectAsState()
@@ -91,6 +92,13 @@ fun TimerScreen(
 
     newBadge?.let { badge ->
         BadgeAwardedDialog(badge = badge, onDismiss = viewModel::onDismissBadge)
+    }
+
+    if (showStopConfirm) {
+        StopConfirmDialog(
+            onConfirm = viewModel::onStopConfirmed,
+            onDismiss = viewModel::onStopDismissed,
+        )
     }
 
     val finishedSessionId = timerState.currentSessionId
@@ -288,7 +296,7 @@ fun TimerScreen(
             onStart     = viewModel::onStartSession,
             onPause     = viewModel::onPause,
             onResume    = viewModel::onResume,
-            onStop      = viewModel::onStop,
+            onStop      = viewModel::onStopRequested,
             onSkipBreak = viewModel::onSkipBreak,
         )
 
@@ -520,6 +528,22 @@ private val FocusStrictness.description: String
         FocusStrictness.STRICT   -> "Session pauses on distraction"
         FocusStrictness.HARDCORE -> "Session ends on first distraction"
     }
+
+// ---- Stop confirmation dialog ----
+
+@Composable
+private fun StopConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title   = { Text("End session?") },
+        text    = { Text("Your progress will be saved but the session will be marked as stopped early.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("Stop") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Keep going") } },
+    )
+}
 
 // ---- Break prompt dialog ----
 

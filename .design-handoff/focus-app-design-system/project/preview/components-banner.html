@@ -1,0 +1,23 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .banner { display:flex; align-items:center; gap:12px; padding:14px 18px; background:rgba(255,107,107,0.18); backdrop-filter:blur(16px); border:1px solid rgba(255,107,107,0.4); border-radius:16px; box-shadow:0 0 32px rgba(255,107,107,0.2); }
+  .banner .icon { font-family:'Material Symbols Rounded'; font-size:24px; color:#FF8E8E; font-variation-settings:'FILL' 1; }
+  .copy { flex:1; }
+  .copy .ttl { font-size:14px; font-weight:600; color:#fff; }
+  .copy .sub { font-size:12px; color:rgba(255,255,255,0.7); }
+  .toast { display:flex; align-items:center; gap:10px; padding:10px 16px; background:rgba(76,175,80,0.18); backdrop-filter:blur(16px); border:1px solid rgba(76,175,80,0.4); border-radius:999px; color:#A5E5A8; font-size:13px; font-weight:500; width:fit-content; }
+  .toast .icon { font-family:'Material Symbols Rounded'; font-size:18px; }
+</style></head>
+<body><div class="card">
+  <div class="label">Distraction banner · slides in from top</div>
+  <div class="banner">
+    <span class="icon">notifications_active</span>
+    <div class="copy">
+      <div class="ttl">You broke focus after 6 min 😅</div>
+      <div class="sub">Auto-dismisses in 4s</div>
+    </div>
+  </div>
+  <div class="label" style="margin-top:6px">Pill toast</div>
+  <div class="toast"><span class="icon">check_circle</span>Break time</div>
+</div></body></html>

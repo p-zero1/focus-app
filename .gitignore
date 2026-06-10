@@ -1,0 +1,54 @@
+# Android / Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.apk
+*.aab
+*.keystore
+*.jks
+local.properties
+.idea/
+*.iml
+*.ipr
+*.iws
+captures/
+.externalNativeBuild/
+.cxx/
+GeneratedPluginRegistrant.java
+
+# Android Studio
+.navigation/
+.DS_Store
+Thumbs.db
+
+# Kotlin/JVM
+*.kotlin_module
+
+# Environment & secrets
+.env
+.env.*
+*.secret
+secrets/
+
+# Log files
+*.log
+logs/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node (for tooling)
+node_modules/
+
+# Test output
+test-results/
+coverage/

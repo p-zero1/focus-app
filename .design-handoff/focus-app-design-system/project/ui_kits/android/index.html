@@ -1,0 +1,99 @@
+<!doctype html>
+<html data-mode="focus">
+<head>
+<meta charset="utf-8">
+<title>Focus App — UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:30px; gap:30px; flex-wrap:wrap; }
+  .phone {
+    width:340px; height:720px; border-radius:36px;
+    background:radial-gradient(120% 80% at 18% 12%, rgba(108,99,255,0.18), transparent 60%), linear-gradient(180deg,#0F0F1A 0%,#08081A 100%);
+    border:8px solid rgba(60,60,80,0.6);
+    box-shadow:0 30px 80px rgba(0,0,0,0.5);
+    overflow:hidden; display:flex; flex-direction:column;
+    position:relative;
+  }
+  .phone-label { text-align:center; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#9E9E9E; font-weight:600; margin-top:8px; }
+  .phone-wrap { display:flex; flex-direction:column; gap:8px; }
+  .status-bar {
+    height:28px; display:flex; align-items:center; justify-content:space-between; padding:0 16px;
+    color:#fff; font-size:12px; font-weight:600; flex-shrink:0;
+  }
+  @keyframes orbBreath { 0%,100%{transform:scale(0.96)} 50%{transform:scale(1.04)} }
+  .label-bar { width:100%; text-align:center; font-size:13px; color:#9E9E9E; padding:8px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="FocusOrb.jsx"></script>
+<script type="text/babel" src="Screens.jsx"></script>
+
+<script type="text/babel">
+function StatusBar() {
+  return (
+    <div className="status-bar">
+      <span style={{fontFamily:'Inter,sans-serif'}}>9:41</span>
+      <span style={{display:'flex', gap:6, alignItems:'center'}}>
+        <span className="material-symbols-rounded" style={{fontSize:14}}>signal_cellular_alt</span>
+        <span className="material-symbols-rounded" style={{fontSize:14}}>wifi</span>
+        <span className="material-symbols-rounded" style={{fontSize:14, fontVariationSettings:"'FILL' 1"}}>battery_full</span>
+      </span>
+    </div>
+  );
+}
+
+function Phone({ children, label }) {
+  return (
+    <div className="phone-wrap">
+      <div className="phone">
+        <StatusBar/>
+        {children}
+      </div>
+      <div className="phone-label">{label}</div>
+    </div>
+  );
+}
+
+function App() {
+  // Phone 1: Timer idle
+  const [s1,setS1] = React.useState({active:false});
+  // Phone 2: Timer active w/ distraction
+  const [s2,setS2] = React.useState({active:true, time:'24:38', elapsed:'00:22', distractions:1, distracted:true});
+  // Phone 3: tab switcher
+  const [tab3, setTab3] = React.useState('analytics');
+  const [s3,setS3] = React.useState({active:false});
+
+  return (
+    <>
+      <Phone label="Timer · idle">
+        <TimerScreen session={s1} setSession={setS1} mode="focus"/>
+        <BottomNav tab="timer" setTab={()=>{}}/>
+      </Phone>
+
+      <Phone label="Timer · active · distracted">
+        <TimerScreen session={s2} setSession={setS2} mode="focus"/>
+        <BottomNav tab="timer" setTab={()=>{}}/>
+      </Phone>
+
+      <Phone label={tab3 === 'analytics' ? 'Analytics' : tab3 === 'history' ? 'History' : tab3 === 'profile' ? 'Profile' : 'Timer'}>
+        {tab3==='timer' && <TimerScreen session={s3} setSession={setS3} mode="focus"/>}
+        {tab3==='analytics' && <AnalyticsScreen/>}
+        {tab3==='history' && <HistoryScreen/>}
+        {tab3==='profile' && <ProfileScreen/>}
+        <BottomNav tab={tab3} setTab={setTab3}/>
+      </Phone>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

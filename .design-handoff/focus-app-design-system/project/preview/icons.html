@@ -1,0 +1,30 @@
+<!doctype html>
+<html data-mode="focus"><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
+  .ic { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 4px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; }
+  .ic .g { font-family:'Material Symbols Rounded'; font-size:26px; color:var(--text-1); font-variation-settings:'FILL' 0,'wght' 400,'opsz' 24; }
+  .ic .nm { font-size:9px; color:var(--text-2); }
+  .ic.on .g { color:var(--primary); font-variation-settings:'FILL' 1,'wght' 500; text-shadow:0 0 12px rgba(108,99,255,0.6); }
+</style></head>
+<body><div class="card">
+  <div class="label">Material symbols rounded · 24dp · fill 0/1</div>
+  <div class="grid">
+    <div class="ic on"><span class="g">home</span><span class="nm">Timer</span></div>
+    <div class="ic"><span class="g">bar_chart</span><span class="nm">Analytics</span></div>
+    <div class="ic"><span class="g">list</span><span class="nm">History</span></div>
+    <div class="ic"><span class="g">person</span><span class="nm">Profile</span></div>
+    <div class="ic"><span class="g">bolt</span><span class="nm">Pomodoro</span></div>
+    <div class="ic"><span class="g">psychology</span><span class="nm">Deep work</span></div>
+    <div class="ic"><span class="g">school</span><span class="nm">Study</span></div>
+    <div class="ic"><span class="g">tune</span><span class="nm">Custom</span></div>
+    <div class="ic"><span class="g">spa</span><span class="nm">Relaxed</span></div>
+    <div class="ic"><span class="g">shield</span><span class="nm">Strict</span></div>
+    <div class="ic"><span class="g">local_fire_department</span><span class="nm">Hardcore</span></div>
+    <div class="ic"><span class="g">play_arrow</span><span class="nm">Start</span></div>
+    <div class="ic"><span class="g">pause</span><span class="nm">Pause</span></div>
+    <div class="ic"><span class="g">stop</span><span class="nm">Stop</span></div>
+    <div class="ic"><span class="g">skip_next</span><span class="nm">Skip</span></div>
+    <div class="ic"><span class="g">notifications</span><span class="nm">Notify</span></div>
+  </div>
+</div></body></html>

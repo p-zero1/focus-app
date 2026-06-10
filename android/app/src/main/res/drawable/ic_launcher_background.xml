@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Design system: Focus purple gradient #9D94FF → #6C63FF → #3A2F8F (135° diagonal) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="135"
+        android:startColor="#9D94FF"
+        android:centerColor="#6C63FF"
+        android:endColor="#3A2F8F"/>
+</shape>
